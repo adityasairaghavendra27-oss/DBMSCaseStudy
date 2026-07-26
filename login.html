@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - DriveHub India DBMS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body style="background: #f1f5f9;">
+
+  <div id="navbar-mount"></div>
+
+  <main class="main-content" style="max-width: 520px; padding-top: 3rem; padding-bottom: 4rem;">
+    <div class="card" style="box-shadow: var(--shadow-lg);">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="width: 60px; height: 60px; background: var(--primary-light); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; margin: 0 auto 0.75rem;">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-main);">DriveHub Sign In</h1>
+        <p style="font-size: 0.875rem; color: var(--text-muted);">Select Indian user role to authenticate</p>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label">User Role Context</label>
+          <select id="login-role" class="form-select">
+            <option value="Customer">Customer (Rajesh Kumar / CUST-1001)</option>
+            <option value="Employee">Employee (Vikram Reddy / EMP-8001)</option>
+            <option value="Administrator">Administrator (System Admin)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Address <span class="db-attr">(Email)</span></label>
+          <input type="email" id="login-email" class="form-control" value="rajesh.kumar@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-control" value="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; font-size: 1rem; margin-top: 0.5rem;">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign In to Portal
+        </button>
+      </form>
+
+      <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); text-align: center;">
+        <p style="font-size: 0.85rem; color: var(--text-muted);">New Customer in India?</p>
+        <a href="register.html" class="btn btn-outline btn-sm" style="margin-top: 0.5rem; width: 100%;">
+          <i class="fa-solid fa-user-plus"></i> Register Customer Account
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginForm = document.getElementById('login-form');
+      const roleSelect = document.getElementById('login-role');
+      const emailInput = document.getElementById('login-email');
+
+      roleSelect.addEventListener('change', () => {
+        if (roleSelect.value === 'Customer') emailInput.value = 'rajesh.kumar@example.com';
+        else if (roleSelect.value === 'Employee') emailInput.value = 'vikram.reddy@drivehub.in';
+        else if (roleSelect.value === 'Administrator') emailInput.value = 'admin@drivehub.in';
+      });
+
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const role = roleSelect.value;
+        const email = emailInput.value;
+
+        let userId = 'CUST-1001';
+        let userName = 'Rajesh Kumar';
+
+        if (role === 'Customer') {
+          const cust = DB.getAll(DB.STORAGE_KEYS.CUSTOMERS).find(c => c.Email === email);
+          if (cust) { userId = cust.CustomerID; userName = cust.Name; }
+        } else if (role === 'Employee') {
+          const emp = DB.getAll(DB.STORAGE_KEYS.EMPLOYEES).find(e => e.Email === email);
+          if (emp) { userId = emp.EmployeeID; userName = emp.Name; }
+        }
+
+        DB.setCurrentUser({ role, id: userId, name: userName, email });
+        App.showToast(`Authenticated as ${role} (${userName})`, 'success');
+
+        setTimeout(() => {
+          if (role === 'Customer') window.location.href = 'customer-dashboard.html';
+          else if (role === 'Employee') window.location.href = 'employee-dashboard.html';
+          else if (role === 'Administrator') window.location.href = 'admin-dashboard.html';
+        }, 500);
+      });
+    });
+  </script>
+</body>
+</html>

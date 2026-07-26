@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rental History - DriveHub DBMS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="navbar-mount"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-clock-history"></i> Rental & Reservation Audit History</h1>
+        <p class="page-subtitle">Relational JOIN records querying <code>Reservation</code>, <code>Rental</code>, <code>Payment</code>, and <code>Vehicle</code> tables</p>
+      </div>
+      <div class="db-entity-badge"><i class="fa-solid fa-list"></i> Query: Multi-table JOIN</div>
+    </div>
+
+    <!-- Data Table Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-table"></i> All Reservations & Trips for <span id="history-cust-id">CUST-1001</span></div>
+        <div>
+          <button class="btn btn-secondary btn-sm" onclick="location.reload()"><i class="fa-solid fa-rotate"></i> Refresh Query</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>Reservation ID</th>
+              <th>Vehicle Name & Reg</th>
+              <th>Pickup Branch</th>
+              <th>Rental Dates</th>
+              <th>Total Cost</th>
+              <th>Reservation Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="history-table-body">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentUser = DB.getCurrentUser();
+      document.getElementById('history-cust-id').innerText = currentUser.id;
+
+      const reservations = DB.getReservationsWithDetails().filter(r => r.CustomerID === currentUser.id);
+      const tableBody = document.getElementById('history-table-body');
+      tableBody.innerHTML = '';
+
+      if (reservations.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No rental history records found for ${currentUser.id}.</td></tr>`;
+        return;
+      }
+
+      reservations.forEach(res => {
+        let actionBtn = '';
+        if (res.Status === 'Confirmed') {
+          actionBtn = `<button onclick="cancelReservation('${res.ReservationID}')" class="btn btn-danger btn-sm"><i class="fa-solid fa-xmark"></i> Cancel</button>`;
+        } else if (res.Status === 'Completed') {
+          actionBtn = `<a href="feedback.html?vehicleId=${res.VehicleID}" class="btn btn-outline btn-sm"><i class="fa-solid fa-star"></i> Review</a>`;
+        } else {
+          actionBtn = `<span style="font-size: 0.8rem; color: var(--text-muted);">-</span>`;
+        }
+
+        tableBody.innerHTML += `
+          <tr>
+            <td><span class="table-pk">${res.ReservationID}</span></td>
+            <td><strong>${res.VehicleName}</strong><br><span style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">${res.VehicleRegistration}</span></td>
+            <td>${res.PickupBranchName}</td>
+            <td>${res.StartDate} to ${res.EndDate}</td>
+            <td><strong>${App.formatCurrency(res.TotalAmount)}</strong></td>
+            <td><span class="badge badge-${res.Status.toLowerCase().replace(' ', '-')}">${res.Status}</span></td>
+            <td>${actionBtn}</td>
+          </tr>
+        `;
+      });
+
+      window.cancelReservation = function(resId) {
+        if (confirm(`Are you sure you want to cancel Reservation ${resId}? This will update the status to 'Cancelled'.`)) {
+          DB.update(DB.STORAGE_KEYS.RESERVATIONS, 'ReservationID', resId, { Status: 'Cancelled' });
+          App.showToast(`Reservation ${resId} cancelled successfully.`, 'info');
+          setTimeout(() => location.reload(), 400);
+        }
+      };
+    });
+  </script>
+</body>
+</html>

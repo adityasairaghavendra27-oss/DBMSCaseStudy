@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Feedback - DriveHub DBMS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="navbar-mount"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-star"></i> Vehicle & Service Feedback</h1>
+        <p class="page-subtitle">Submit feedback logs into the <code>Feedback</code> table mapped to <code>CustomerID</code> and <code>VehicleID</code></p>
+      </div>
+      <div class="db-entity-badge"><i class="fa-solid fa-comments"></i> Entity: Feedback</div>
+    </div>
+
+    <div class="grid grid-3" style="grid-template-columns: 1fr 2fr; align-items: start;">
+      
+      <!-- Submit Feedback Card -->
+      <div class="card">
+        <h3 class="card-title" style="margin-bottom: 1rem;"><i class="fa-solid fa-pen-to-square"></i> Submit Review</h3>
+
+        <form id="feedback-form">
+          <div class="form-group">
+            <label class="form-label">Select Vehicle <span class="db-attr">(VehicleID)</span></label>
+            <select id="fb-vehicle-id" class="form-select" required>
+              <!-- Filled via JS -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Rating (1 to 5 Stars) <span class="db-attr">(Rating)</span></label>
+            <select id="fb-rating" class="form-select" required>
+              <option value="5">⭐⭐⭐⭐⭐ 5 Stars (Excellent)</option>
+              <option value="4">⭐⭐⭐⭐ 4 Stars (Good)</option>
+              <option value="3">⭐⭐⭐ 3 Stars (Average)</option>
+              <option value="2">⭐⭐ 2 Stars (Poor)</option>
+              <option value="1">⭐ 1 Star (Terrible)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Detailed Comments <span class="db-attr">(Comments)</span></label>
+            <textarea id="fb-comments" class="form-control" rows="4" placeholder="Share details about vehicle condition, cleanliness, or staff service..." required></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem;">
+            <i class="fa-solid fa-paper-plane"></i> Submit Feedback Record
+          </button>
+        </form>
+      </div>
+
+      <!-- Existing Feedback Logs Table -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fa-solid fa-comments"></i> Community Verified Feedback Database</div>
+        </div>
+
+        <div id="all-feedback-container">
+          <!-- Filled via JS -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentUser = DB.getCurrentUser();
+      const targetVehicleId = App.getParam('vehicleId');
+
+      const vehicles = DB.getAll(DB.STORAGE_KEYS.VEHICLES);
+      const vehSelect = document.getElementById('fb-vehicle-id');
+      
+      vehicles.forEach(v => {
+        const isSel = v.VehicleID === targetVehicleId ? 'selected' : '';
+        vehSelect.innerHTML += `<option value="${v.VehicleID}" ${isSel}>${v.Make} ${v.Model} (${v.VehicleID})</option>`;
+      });
+
+      // Submit Handler
+      document.getElementById('feedback-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const feedbacks = DB.getAll(DB.STORAGE_KEYS.FEEDBACK);
+        const fbId = `FB-${7001 + feedbacks.length}`;
+
+        const newFeedback = {
+          FeedbackID: fbId,
+          CustomerID: currentUser.id,
+          VehicleID: vehSelect.value,
+          Rating: parseInt(document.getElementById('fb-rating').value),
+          Comments: document.getElementById('fb-comments').value,
+          FeedbackDate: new Date().toISOString().split('T')[0]
+        };
+
+        DB.insert(DB.STORAGE_KEYS.FEEDBACK, newFeedback);
+        App.showToast(`Feedback Record ${fbId} committed to database!`, 'success');
+
+        document.getElementById('fb-comments').value = '';
+        renderFeedbacks();
+      });
+
+      renderFeedbacks();
+
+      function renderFeedbacks() {
+        const feedbacks = DB.getAll(DB.STORAGE_KEYS.FEEDBACK);
+        const customers = DB.getAll(DB.STORAGE_KEYS.CUSTOMERS);
+        const container = document.getElementById('all-feedback-container');
+        container.innerHTML = '';
+
+        feedbacks.forEach(f => {
+          const cust = customers.find(c => c.CustomerID === f.CustomerID);
+          const veh = vehicles.find(v => v.VehicleID === f.VehicleID);
+
+          let stars = '⭐'.repeat(f.Rating);
+
+          container.innerHTML += `
+            <div style="padding: 1.25rem; border-bottom: 1px solid var(--border); background: var(--bg-main); border-radius: var(--radius-md); margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <strong>${cust ? cust.Name : f.CustomerID}</strong>
+                  <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700;">Vehicle: ${veh ? `${veh.Make} ${veh.Model}` : f.VehicleID}</div>
+                </div>
+                <div style="font-size: 1rem; color: #f59e0b;">${stars}</div>
+              </div>
+              <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.5;">"${f.Comments}"</p>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; display: flex; justify-content: space-between;">
+                <span>ID: <code class="table-pk">${f.FeedbackID}</code></span>
+                <span>Submitted: ${f.FeedbackDate}</span>
+              </div>
+            </div>
+          `;
+        });
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indian Payment Gateway - DriveHub DBMS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="navbar-mount"></div>
+
+  <main class="main-content" style="max-width: 840px;">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-indian-rupee-sign"></i> Indian Payment Gateway (Simulated)</h1>
+        <p class="page-subtitle">Inserts payment transaction record into <code>Payment</code> table & commits <code>Reservation.Status</code> = 'Confirmed'</p>
+      </div>
+      <div class="db-entity-badge"><i class="fa-solid fa-receipt"></i> Entity: Payment & Reservation</div>
+    </div>
+
+    <div class="grid grid-2" style="align-items: start;">
+      
+      <!-- Payment Method Selection Form -->
+      <div class="card">
+        <h3 class="card-title" style="margin-bottom: 1rem;"><i class="fa-solid fa-lock" style="color: var(--success);"></i> Select Payment Method</h3>
+        
+        <form id="payment-form">
+          <div class="form-group">
+            <label class="form-label">Payment Channel</label>
+            <select id="pay-method" class="form-select">
+              <option value="Google Pay">Google Pay (UPI)</option>
+              <option value="PhonePe">PhonePe (UPI)</option>
+              <option value="Paytm UPI">Paytm UPI</option>
+              <option value="UPI Direct">VPA / BHIM UPI ID</option>
+              <option value="Credit Card">Credit Card (Visa / MasterCard / RuPay)</option>
+              <option value="Debit Card">Debit Card / ATM Card</option>
+              <option value="Net Banking">Net Banking (HDFC / ICICI / SBI)</option>
+            </select>
+          </div>
+
+          <!-- Dynamic UPI Field -->
+          <div id="upi-field" class="form-group">
+            <label class="form-label">Virtual Payment Address (VPA / UPI ID)</label>
+            <input type="text" id="upi-id-input" class="form-control" value="9849012345@paytm" placeholder="mobile@upi">
+          </div>
+
+          <!-- Card Fields -->
+          <div id="card-fields" style="display: none;">
+            <div class="form-group">
+              <label class="form-label">Cardholder Name</label>
+              <input type="text" class="form-control" value="Rajesh Kumar">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Card Number</label>
+              <input type="text" class="form-control" value="4532 •••• •••• 8892">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Expiry Date</label>
+                <input type="text" class="form-control" value="08/28">
+              </div>
+              <div class="form-group">
+                <label class="form-label">CVV</label>
+                <input type="password" class="form-control" value="•••">
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-success" style="width: 100%; padding: 0.85rem; font-size: 1.05rem; margin-top: 1rem;">
+            <i class="fa-solid fa-circle-check"></i> Complete Instant Payment
+          </button>
+        </form>
+      </div>
+
+      <!-- Order Summary Card -->
+      <div class="card" style="box-shadow: var(--shadow-md);">
+        <h3 class="card-title" style="margin-bottom: 1rem;"><i class="fa-solid fa-file-invoice-dollar"></i> Booking Order Invoice</h3>
+        
+        <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 2;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>Reservation Ref:</span>
+            <strong id="summary-res-id" class="table-pk">RES-2001</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>Vehicle:</span>
+            <strong id="summary-vehicle">Hyundai Creta SX</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>Customer:</span>
+            <strong id="summary-customer">Rajesh Kumar</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>Rental Dates:</span>
+            <strong id="summary-dates">2026-07-25 to 2026-07-28</strong>
+          </div>
+          <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.75rem 0;">
+          <div style="display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 800; color: var(--primary);">
+            <span>Payable Amount:</span>
+            <span id="summary-amount">₹6,300</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.25rem; font-size: 0.75rem; color: var(--text-muted); background: var(--bg-main); padding: 0.75rem; border-radius: var(--radius-sm);">
+          <i class="fa-solid fa-shield-halved" style="color: var(--success);"></i> Simulated Gateway: Generates Indian UPI reference code (e.g. <code>UPI/9849012345/TXN9984</code>) stored in DBMS <code>Payment</code> table.
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Confirmation Receipt Modal -->
+  <div class="modal-overlay" id="receipt-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title"><i class="fa-solid fa-circle-check" style="color: var(--success);"></i> Payment Receipt & Booking Voucher</div>
+        <button class="modal-close" onclick="window.location.href='customer-dashboard.html'">&times;</button>
+      </div>
+      <div class="modal-body" id="receipt-body">
+        <!-- Filled via JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Voucher</button>
+        <a href="customer-dashboard.html" class="btn btn-primary"><i class="fa-solid fa-arrow-right"></i> Go to My Dashboard</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const resId = App.getParam('resId') || 'RES-2001';
+      const reservations = DB.getReservationsWithDetails();
+      const targetRes = reservations.find(r => r.ReservationID === resId) || reservations[0];
+
+      document.getElementById('summary-res-id').innerText = targetRes.ReservationID;
+      document.getElementById('summary-vehicle').innerText = targetRes.VehicleName;
+      document.getElementById('summary-customer').innerText = targetRes.CustomerName;
+      document.getElementById('summary-dates').innerText = `${targetRes.StartDate} to ${targetRes.EndDate}`;
+      document.getElementById('summary-amount').innerText = App.formatCurrency(targetRes.TotalAmount);
+
+      const payMethodSel = document.getElementById('pay-method');
+      const upiField = document.getElementById('upi-field');
+      const cardFields = document.getElementById('card-fields');
+
+      payMethodSel.addEventListener('change', () => {
+        if (payMethodSel.value.includes('Card')) {
+          cardFields.style.display = 'block';
+          upiField.style.display = 'none';
+        } else {
+          cardFields.style.display = 'none';
+          upiField.style.display = 'block';
+        }
+      });
+
+      // Handle Payment Submission
+      document.getElementById('payment-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const method = payMethodSel.value;
+        const payments = DB.getAll(DB.STORAGE_KEYS.PAYMENTS);
+        const payId = `PAY-${4001 + payments.length}`;
+        const txnRef = `UPI/${Math.floor(7000000000 + Math.random() * 2999999999)}/TXN${Math.floor(1000 + Math.random() * 8999)}`;
+
+        // 1. Insert into Payment table
+        const newPayment = {
+          PaymentID: payId,
+          ReservationID: targetRes.ReservationID,
+          CustomerID: targetRes.CustomerID,
+          Amount: targetRes.TotalAmount,
+          PaymentMethod: method,
+          TransactionRef: txnRef,
+          PaymentDate: new Date().toISOString().split('T')[0],
+          PaymentStatus: 'Completed'
+        };
+        DB.insert(DB.STORAGE_KEYS.PAYMENTS, newPayment);
+
+        // 2. Update Reservation status to 'Confirmed'
+        DB.update(DB.STORAGE_KEYS.RESERVATIONS, 'ReservationID', targetRes.ReservationID, { Status: 'Confirmed' });
+
+        App.showToast(`Payment ${payId} authorized via ${method}! Transaction Ref: ${txnRef}`, 'success');
+
+        // Render Receipt Modal
+        const receiptBody = document.getElementById('receipt-body');
+        receiptBody.innerHTML = `
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <i class="fa-solid fa-circle-check" style="font-size: 3.5rem; color: var(--success);"></i>
+            <h2 style="font-size: 1.4rem; font-weight: 800; margin-top: 0.5rem;">Payment Successful!</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Database record committed to Payment & Reservation tables.</p>
+          </div>
+
+          <div style="background: var(--bg-main); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); font-size: 0.875rem; line-height: 1.8;">
+            <div style="display: flex; justify-content: space-between;"><span>Payment ID:</span><strong class="table-pk">${payId}</strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>UPI / Ref Code:</span><code>${txnRef}</code></div>
+            <div style="display: flex; justify-content: space-between;"><span>Reservation ID:</span><strong>${targetRes.ReservationID}</strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>Customer:</span><strong>${targetRes.CustomerName}</strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>Vehicle Model:</span><strong>${targetRes.VehicleName} (${targetRes.VehicleRegistration})</strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>Payment Method:</span><strong>${method}</strong></div>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
+            <div style="display: flex; justify-content: space-between; font-size: 1.15rem; color: var(--primary);"><span>Total Amount Paid:</span><strong>${App.formatCurrency(targetRes.TotalAmount)}</strong></div>
+          </div>
+        `;
+
+        App.openModal('receipt-modal');
+      });
+    });
+  </script>
+</body>
+</html>

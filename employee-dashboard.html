@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Dashboard - DriveHub DBMS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="navbar-mount"></div>
+
+  <main class="main-content">
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-clipboard-user"></i> Employee Operations Desk</h1>
+        <p class="page-subtitle" id="emp-welcome">Staff Console - Assigned to Downtown Central Branch (BR-101)</p>
+        <div class="db-entity-badge"><i class="fa-solid fa-user-shield"></i> Employee ID: <span id="emp-pk-id">EMP-8001</span></div>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="vehicle-pickup-return.html" class="btn btn-primary"><i class="fa-solid fa-key"></i> Process Pickup / Return</a>
+        <a href="maintenance.html" class="btn btn-outline"><i class="fa-solid fa-wrench"></i> Fleet Maintenance</a>
+      </div>
+    </div>
+
+    <!-- Operations KPI Row -->
+    <div class="grid grid-4" style="margin-bottom: 2rem;">
+      <div class="kpi-card">
+        <div class="kpi-info">
+          <div class="kpi-label">Today's Pickups</div>
+          <div class="kpi-value" id="emp-kpi-pickups">2</div>
+          <div class="kpi-subtext">Confirmed reservations</div>
+        </div>
+        <div class="kpi-icon"><i class="fa-solid fa-car-side"></i></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-info">
+          <div class="kpi-label">Active Rentals</div>
+          <div class="kpi-value" id="emp-kpi-active">2</div>
+          <div class="kpi-subtext">Vehicles out on road</div>
+        </div>
+        <div class="kpi-icon"><i class="fa-solid fa-road"></i></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-info">
+          <div class="kpi-label">Pending Returns</div>
+          <div class="kpi-value" id="emp-kpi-returns">1</div>
+          <div class="kpi-subtext">Due back today</div>
+        </div>
+        <div class="kpi-icon"><i class="fa-solid fa-right-left"></i></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-info">
+          <div class="kpi-label">In Service / Maintenance</div>
+          <div class="kpi-value" id="emp-kpi-maint">1</div>
+          <div class="kpi-subtext">Under repair</div>
+        </div>
+        <div class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      </div>
+    </div>
+
+    <!-- Operations Queue Table -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-list-check"></i> Vehicle Dispatch & Inspection Queue</div>
+        <a href="vehicle-pickup-return.html" class="btn btn-primary btn-sm"><i class="fa-solid fa-clipboard-check"></i> Open Counter Desk</a>
+      </div>
+      <div class="table-container">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>Res / Rental ID</th>
+              <th>Customer Name</th>
+              <th>Vehicle Name & Reg</th>
+              <th>Pickup Date</th>
+              <th>Status</th>
+              <th>Operational Action</th>
+            </tr>
+          </thead>
+          <tbody id="emp-queue-table-body">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentUser = DB.getCurrentUser();
+      const emp = DB.getById(DB.STORAGE_KEYS.EMPLOYEES, 'EmployeeID', currentUser.id);
+
+      if (emp) {
+        document.getElementById('emp-welcome').innerText = `Staff Console - ${emp.Name} (${emp.Role}) | Branch: ${emp.BranchID}`;
+        document.getElementById('emp-pk-id').innerText = emp.EmployeeID;
+      }
+
+      // Fetch Reservations & Rentals
+      const reservations = DB.getReservationsWithDetails();
+      const rentals = DB.getRentalsWithDetails();
+      const vehicles = DB.getAll(DB.STORAGE_KEYS.VEHICLES);
+      const maintenance = DB.getAll(DB.STORAGE_KEYS.MAINTENANCE);
+
+      // KPI Counts
+      const pickupsCount = reservations.filter(r => r.Status === 'Confirmed').length;
+      const activeCount = rentals.filter(r => r.Status === 'Active').length;
+      const returnsCount = activeCount;
+      const maintCount = vehicles.filter(v => v.Status === 'In Maintenance').length;
+
+      document.getElementById('emp-kpi-pickups').innerText = pickupsCount;
+      document.getElementById('emp-kpi-active').innerText = activeCount;
+      document.getElementById('emp-kpi-returns').innerText = returnsCount;
+      document.getElementById('emp-kpi-maint').innerText = maintCount;
+
+      // Populate Operations Queue
+      const queueTable = document.getElementById('emp-queue-table-body');
+      queueTable.innerHTML = '';
+
+      reservations.forEach(r => {
+        let actionBtn = '';
+        if (r.Status === 'Confirmed') {
+          actionBtn = `<a href="vehicle-pickup-return.html?resId=${r.ReservationID}&action=pickup" class="btn btn-success btn-sm"><i class="fa-solid fa-key"></i> Handover Key (Pickup)</a>`;
+        } else if (r.RentalStatus === 'Active') {
+          actionBtn = `<a href="vehicle-pickup-return.html?rentalId=${r.RentalID}&action=return" class="btn btn-primary btn-sm"><i class="fa-solid fa-square-check"></i> Inspect & Return</a>`;
+        } else {
+          actionBtn = `<span class="badge badge-completed">Completed</span>`;
+        }
+
+        queueTable.innerHTML += `
+          <tr>
+            <td><span class="table-pk">${r.ReservationID}</span></td>
+            <td><strong>${r.CustomerName}</strong><br><span style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">${r.CustomerID}</span></td>
+            <td><strong>${r.VehicleName}</strong><br><span style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">${r.VehicleRegistration}</span></td>
+            <td>${r.StartDate}</td>
+            <td><span class="badge badge-${r.Status.toLowerCase().replace(' ', '-')}">${r.Status}</span></td>
+            <td>${actionBtn}</td>
+          </tr>
+        `;
+      });
+    });
+  </script>
+</body>
+</html>

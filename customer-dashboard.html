@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Dashboard - DriveHub India</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="navbar-mount"></div>
+
+  <main class="main-content">
+    <!-- Page Header with Logged-in Customer Context -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-gauge-high"></i> Customer Portal Dashboard</h1>
+        <p class="page-subtitle" id="cust-welcome">Welcome back, Customer</p>
+        <div class="db-entity-badge"><i class="fa-solid fa-key"></i> Customer ID: <span id="cust-pk-id" style="font-family: monospace;">CUST-1001</span></div>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="search-cars.html" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Book Self-Drive Car</a>
+        <a href="rental-history.html" class="btn btn-outline"><i class="fa-solid fa-clock-rotate-left"></i> Rental History</a>
+      </div>
+    </div>
+
+    <!-- Quick KPI Metric Cards -->
+    <div class="grid grid-3" style="margin-bottom: 2rem;">
+      <div class="kpi-card">
+        <div class="kpi-info">
+          <div class="kpi-label">Active Booking</div>
+          <div class="kpi-value" id="kpi-active-res">1</div>
+          <div class="kpi-subtext">Confirmed reservation status</div>
+        </div>
+        <div class="kpi-icon"><i class="fa-solid fa-car"></i></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-info">
+          <div class="kpi-label">Completed Rentals</div>
+          <div class="kpi-value" id="kpi-completed-rentals">1</div>
+          <div class="kpi-subtext">Past trips in India</div>
+        </div>
+        <div class="kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-info">
+          <div class="kpi-label">Total Expended</div>
+          <div class="kpi-value" id="kpi-total-spent">₹6,300</div>
+          <div class="kpi-subtext">UPI / Payment transactions</div>
+        </div>
+        <div class="kpi-icon"><i class="fa-solid fa-wallet"></i></div>
+      </div>
+    </div>
+
+    <!-- Active Booking Spotlight Banner -->
+    <div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--primary);">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-calendar-check"></i> Current Active Reservation Spotlight</div>
+        <span class="badge badge-confirmed">Confirmed</span>
+      </div>
+      <div id="active-spotlight-body">
+        <!-- Dynamically rendered via JS -->
+      </div>
+    </div>
+
+    <!-- Recent Reservations & Payments Table -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-table-list"></i> Customer Reservation Records</div>
+        <a href="rental-history.html" class="btn btn-outline btn-sm">Full Rental Audit</a>
+      </div>
+      <div class="table-container">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>Reservation ID</th>
+              <th>Vehicle</th>
+              <th>Dates</th>
+              <th>Pickup Branch</th>
+              <th>Total Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="cust-res-table-body">
+            <!-- Dynamically rendered -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentUser = DB.getCurrentUser();
+      const customer = DB.getById(DB.STORAGE_KEYS.CUSTOMERS, 'CustomerID', currentUser.id);
+
+      if (customer) {
+        document.getElementById('cust-welcome').innerText = `Namaste, ${customer.Name} (${customer.Email})`;
+        document.getElementById('cust-pk-id').innerText = customer.CustomerID;
+      }
+
+      // Fetch customer reservations via SQL JOIN simulator
+      const allReservations = DB.getReservationsWithDetails();
+      const custReservations = allReservations.filter(r => r.CustomerID === currentUser.id);
+
+      // KPI Calculations
+      const activeResCount = custReservations.filter(r => r.Status === 'Confirmed' || r.Status === 'Active').length;
+      const completedCount = custReservations.filter(r => r.Status === 'Completed').length;
+      const totalSpent = custReservations.reduce((sum, r) => sum + (r.TotalAmount || 0), 0);
+
+      document.getElementById('kpi-active-res').innerText = activeResCount;
+      document.getElementById('kpi-completed-rentals').innerText = completedCount;
+      document.getElementById('kpi-total-spent').innerText = App.formatCurrency(totalSpent);
+
+      // Spotlight Active Reservation
+      const activeRes = custReservations.find(r => r.Status === 'Confirmed');
+      const spotlightBody = document.getElementById('active-spotlight-body');
+
+      if (activeRes) {
+        spotlightBody.innerHTML = `
+          <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: center;">
+            <div style="flex: 1;">
+              <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">${activeRes.VehicleName}</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); font-family: monospace;">Reservation ID: ${activeRes.ReservationID} | Reg: ${activeRes.VehicleRegistration}</p>
+              
+              <div style="display: flex; gap: 2rem; margin-top: 1rem; font-size: 0.9rem;">
+                <div><strong>Pickup Location:</strong> ${activeRes.PickupBranchName}</div>
+                <div><strong>Duration:</strong> ${App.formatDate(activeRes.StartDate)} to ${App.formatDate(activeRes.EndDate)}</div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">${App.formatCurrency(activeRes.TotalAmount)}</div>
+              <a href="rental-history.html" class="btn btn-primary btn-sm" style="margin-top: 0.5rem;"><i class="fa-solid fa-file-invoice"></i> View Invoice</a>
+            </div>
+          </div>
+        `;
+      } else {
+        spotlightBody.innerHTML = `<p style="color: var(--text-muted);">No active ongoing reservations. Browse Indian cars to create one!</p>`;
+      }
+
+      // Populate Table
+      const tableBody = document.getElementById('cust-res-table-body');
+      tableBody.innerHTML = '';
+
+      if (custReservations.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No reservation records found in database.</td></tr>`;
+      } else {
+        custReservations.forEach(res => {
+          tableBody.innerHTML += `
+            <tr>
+              <td><span class="table-pk">${res.ReservationID}</span></td>
+              <td><strong>${res.VehicleName}</strong></td>
+              <td>${App.formatDate(res.StartDate)} - ${App.formatDate(res.EndDate)}</td>
+              <td>${res.PickupBranchName}</td>
+              <td><strong>${App.formatCurrency(res.TotalAmount)}</strong></td>
+              <td><span class="badge badge-${res.Status.toLowerCase()}">${res.Status}</span></td>
+              <td>
+                <a href="rental-history.html" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye"></i> Details</a>
+              </td>
+            </tr>
+          `;
+        });
+      }
+    });
+  </script>
+</body>
+</html>

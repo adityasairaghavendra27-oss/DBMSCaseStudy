@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Reservation - DriveHub India</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="navbar-mount"></div>
+
+  <main class="main-content" style="max-width: 960px;">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-calendar-plus"></i> Vehicle Reservation Booking</h1>
+        <p class="page-subtitle">Calculates rental cost with 18% GST and inserts record into the <code>Reservation</code> entity table</p>
+      </div>
+      <div class="db-entity-badge"><i class="fa-solid fa-database"></i> Table: Reservation</div>
+    </div>
+
+    <form id="reservation-form">
+      <div class="grid grid-3" style="grid-template-columns: 2fr 1fr; align-items: start;">
+        
+        <!-- Reservation Form Fields -->
+        <div class="card">
+          <h3 class="card-title" style="margin-bottom: 1.25rem;"><i class="fa-solid fa-file-contract"></i> Reservation Parameters</h3>
+
+          <div class="form-group">
+            <label class="form-label">Selected Customer <span class="db-attr">(CustomerID)</span></label>
+            <select id="res-customer-id" class="form-select" required>
+              <!-- Filled via JS -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Selected Vehicle <span class="db-attr">(VehicleID)</span></label>
+            <select id="res-vehicle-id" class="form-select" required>
+              <!-- Filled via JS -->
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Pickup Hub <span class="db-attr">(PickupBranchID)</span></label>
+              <select id="res-pickup-branch" class="form-select" required>
+                <!-- Filled -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Drop-off Hub <span class="db-attr">(DropoffBranchID)</span></label>
+              <select id="res-dropoff-branch" class="form-select" required>
+                <!-- Filled -->
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Start Date <span class="db-attr">(StartDate)</span></label>
+              <input type="date" id="res-start-date" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">End Date <span class="db-attr">(EndDate)</span></label>
+              <input type="date" id="res-end-date" class="form-control" required>
+            </div>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0;">
+
+          <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;"><i class="fa-solid fa-list-check"></i> Add-on Services (INR ₹)</h4>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+              <input type="checkbox" id="addon-insurance" value="300" class="addon-checkbox" checked> Zero-Dep Liability Cover (+₹300/day)
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+              <input type="checkbox" id="addon-fastag" value="100" class="addon-checkbox" checked> Pre-loaded FASTag Toll Pass (+₹100/day)
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+              <input type="checkbox" id="addon-childseat" value="150" class="addon-checkbox"> Child Safety Seat (+₹150/day)
+            </label>
+          </div>
+        </div>
+
+        <!-- Price Breakdown & Summary Side Card -->
+        <div class="card" style="box-shadow: var(--shadow-md);">
+          <h3 class="card-title" style="margin-bottom: 1rem;"><i class="fa-solid fa-calculator"></i> Rate Breakdown</h3>
+
+          <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 2;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>Daily Rate:</span>
+              <strong id="calc-daily-rate">₹0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Duration:</span>
+              <strong id="calc-days">0 Days</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Add-ons Total:</span>
+              <strong id="calc-addons">₹0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>GST (18%):</span>
+              <strong id="calc-tax">₹0</strong>
+            </div>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.75rem 0;">
+            <div style="display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 800; color: var(--primary);">
+              <span>Total Amount:</span>
+              <span id="calc-total">₹0</span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem; margin-top: 1.5rem;">
+            <i class="fa-solid fa-indian-rupee-sign"></i> Proceed to Payment Gateway
+          </button>
+        </div>
+
+      </div>
+    </form>
+  </main>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentUser = DB.getCurrentUser();
+      const targetVehicleId = App.getParam('vehicleId') || 'VEH-501';
+
+      const customers = DB.getAll(DB.STORAGE_KEYS.CUSTOMERS);
+      const vehicles = DB.getAll(DB.STORAGE_KEYS.VEHICLES);
+      const branches = DB.getAll(DB.STORAGE_KEYS.BRANCHES);
+
+      // Populate Customers
+      const custSelect = document.getElementById('res-customer-id');
+      customers.forEach(c => {
+        const isSel = c.CustomerID === currentUser.id ? 'selected' : '';
+        custSelect.innerHTML += `<option value="${c.CustomerID}" ${isSel}>${c.Name} (${c.CustomerID})</option>`;
+      });
+
+      // Populate Vehicles
+      const vehSelect = document.getElementById('res-vehicle-id');
+      vehicles.forEach(v => {
+        const isSel = v.VehicleID === targetVehicleId ? 'selected' : '';
+        vehSelect.innerHTML += `<option value="${v.VehicleID}" ${isSel}>${v.Make} ${v.Model} (${App.formatCurrency(v.DailyRate)}/day)</option>`;
+      });
+
+      // Populate Branches
+      const pickBranch = document.getElementById('res-pickup-branch');
+      const dropBranch = document.getElementById('res-dropoff-branch');
+      branches.forEach(b => {
+        pickBranch.innerHTML += `<option value="${b.BranchID}">${b.City} - ${b.BranchName}</option>`;
+        dropBranch.innerHTML += `<option value="${b.BranchID}">${b.City} - ${b.BranchName}</option>`;
+      });
+
+      const today = new Date();
+      const future = new Date();
+      future.setDate(today.getDate() + 3);
+
+      const startDateInput = document.getElementById('res-start-date');
+      const endDateInput = document.getElementById('res-end-date');
+
+      startDateInput.value = today.toISOString().split('T')[0];
+      endDateInput.value = future.toISOString().split('T')[0];
+
+      function updateCalculations() {
+        const selectedVehicle = vehicles.find(v => v.VehicleID === vehSelect.value) || vehicles[0];
+        const dailyRate = selectedVehicle.DailyRate;
+
+        const start = new Date(startDateInput.value);
+        const end = new Date(endDateInput.value);
+        let days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        if (days < 1) days = 1;
+
+        let addonDaily = 0;
+        document.querySelectorAll('.addon-checkbox:checked').forEach(cb => {
+          addonDaily += parseFloat(cb.value);
+        });
+
+        const subtotal = (dailyRate + addonDaily) * days;
+        const gst = subtotal * 0.18; // 18% GST
+        const total = subtotal + gst;
+
+        document.getElementById('calc-daily-rate').innerText = App.formatCurrency(dailyRate);
+        document.getElementById('calc-days').innerText = `${days} Day(s)`;
+        document.getElementById('calc-addons').innerText = App.formatCurrency(addonDaily * days);
+        document.getElementById('calc-tax').innerText = App.formatCurrency(gst);
+        document.getElementById('calc-total').innerText = App.formatCurrency(total);
+
+        return { days, total };
+      }
+
+      vehSelect.addEventListener('change', updateCalculations);
+      startDateInput.addEventListener('change', updateCalculations);
+      endDateInput.addEventListener('change', updateCalculations);
+      document.querySelectorAll('.addon-checkbox').forEach(cb => cb.addEventListener('change', updateCalculations));
+
+      updateCalculations();
+
+      document.getElementById('reservation-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const { total } = updateCalculations();
+        
+        const reservations = DB.getAll(DB.STORAGE_KEYS.RESERVATIONS);
+        const resId = `RES-${2001 + reservations.length}`;
+
+        const newReservation = {
+          ReservationID: resId,
+          CustomerID: custSelect.value,
+          VehicleID: vehSelect.value,
+          PickupBranchID: pickBranch.value,
+          DropoffBranchID: dropBranch.value,
+          StartDate: startDateInput.value,
+          EndDate: endDateInput.value,
+          TotalAmount: Math.round(total),
+          Status: 'Pending Payment'
+        };
+
+        DB.insert(DB.STORAGE_KEYS.RESERVATIONS, newReservation);
+        App.showToast(`Reservation Record ${resId} created! Redirecting to Indian Payment Gateway...`, 'info');
+
+        setTimeout(() => {
+          window.location.href = `payment.html?resId=${resId}`;
+        }, 600);
+      });
+    });
+  </script>
+</body>
+</html>

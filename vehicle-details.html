@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Details - DriveHub India</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="navbar-mount"></div>
+
+  <main class="main-content">
+    <div style="margin-bottom: 1rem;">
+      <a href="search-cars.html" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-left"></i> Back to Fleet Catalog</a>
+    </div>
+
+    <div class="grid grid-3" style="grid-template-columns: 2fr 1fr; align-items: start;">
+      <!-- Main Details Card -->
+      <div>
+        <div class="card" style="margin-bottom: 2rem;">
+          <div style="height: 320px; border-radius: var(--radius-md); overflow: hidden; background: #f1f5f9; margin-bottom: 1.5rem;">
+            <img id="detail-img" src="" alt="Vehicle" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+            <div>
+              <h1 id="detail-title" class="page-title" style="font-size: 2rem;">Vehicle Name</h1>
+              <p style="font-size: 0.85rem; color: var(--text-muted); font-family: monospace;" id="detail-meta">ID: VEH-501 | Reg: TS09AB1234</p>
+            </div>
+            <span id="detail-status" class="badge badge-available" style="font-size: 0.9rem; padding: 0.4rem 0.85rem;">Available</span>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0;">
+
+          <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;"><i class="fa-solid fa-microchip" style="color: var(--primary);"></i> DBMS Entity Attributes</h3>
+          <div class="grid grid-3" style="margin-bottom: 1.5rem;">
+            <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border);">
+              <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Category</div>
+              <div id="attr-cat" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Hatchback</div>
+            </div>
+            <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border);">
+              <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Manufacturing Year</div>
+              <div id="attr-year" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">2023</div>
+            </div>
+            <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border);">
+              <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Transmission</div>
+              <div id="attr-trans" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Manual</div>
+            </div>
+            <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border);">
+              <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Fuel Type</div>
+              <div id="attr-fuel" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Petrol</div>
+            </div>
+            <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border);">
+              <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Assigned Hub (FK)</div>
+              <div id="attr-branch" style="font-size: 0.95rem; font-weight: 700; color: var(--primary);">Hyderabad (Hitec City)</div>
+            </div>
+            <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border);">
+              <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Daily Rate</div>
+              <div id="attr-rate" style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">₹1,250 / day</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Feedback Logs Section -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-comments"></i> Verified Customer Reviews in India</div>
+          </div>
+          <div id="feedback-list">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Action & Booking Summary Card -->
+      <div class="card" style="box-shadow: var(--shadow-md); position: sticky; top: 90px;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Self-Drive Rental Rate</div>
+        <div id="sidebar-price" style="font-size: 2.25rem; font-weight: 800; color: var(--primary);">₹1,250 <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: normal;">/ day</span></div>
+        
+        <div style="margin: 1.25rem 0; padding: 1rem; background: var(--primary-light); border-radius: var(--radius-md); font-size: 0.85rem; color: var(--text-secondary);">
+          <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Includes FASTag toll support, zero-dep insurance option, and 250 KM/day quota.
+        </div>
+
+        <a id="btn-proceed-reserve" href="#" class="btn btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1.05rem;">
+          <i class="fa-solid fa-calendar-check"></i> Book Self-Drive Car
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const vehicleId = App.getParam('id') || 'VEH-501';
+      const vehicle = DB.getById(DB.STORAGE_KEYS.VEHICLES, 'VehicleID', vehicleId);
+      const branches = DB.getAll(DB.STORAGE_KEYS.BRANCHES);
+
+      if (!vehicle) {
+        alert('Vehicle record not found!');
+        window.location.href = 'search-cars.html';
+        return;
+      }
+
+      const branch = branches.find(b => b.BranchID === vehicle.BranchID);
+
+      document.getElementById('detail-img').src = vehicle.ImageUrl;
+      document.getElementById('detail-title').innerText = `${vehicle.Make} ${vehicle.Model}`;
+      document.getElementById('detail-meta').innerText = `Vehicle ID: ${vehicle.VehicleID} | Registration No: ${vehicle.RegistrationNo}`;
+      
+      const statusBadge = document.getElementById('detail-status');
+      statusBadge.innerText = vehicle.Status;
+      statusBadge.className = `badge badge-${vehicle.Status.toLowerCase().replace(' ', '-')}`;
+
+      document.getElementById('attr-cat').innerText = vehicle.Category;
+      document.getElementById('attr-year').innerText = vehicle.Year;
+      document.getElementById('attr-trans').innerText = vehicle.Transmission;
+      document.getElementById('attr-fuel').innerText = vehicle.FuelType;
+      document.getElementById('attr-branch').innerText = branch ? `${branch.City} (${branch.BranchName})` : 'Main Depot';
+      document.getElementById('attr-rate').innerText = `${App.formatCurrency(vehicle.DailyRate)} / day`;
+      document.getElementById('sidebar-price').innerHTML = `${App.formatCurrency(vehicle.DailyRate)} <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: normal;">/ day</span>`;
+
+      const reserveBtn = document.getElementById('btn-proceed-reserve');
+      if (vehicle.Status !== 'Available') {
+        reserveBtn.classList.add('disabled');
+        reserveBtn.style.opacity = '0.5';
+        reserveBtn.style.pointerEvents = 'none';
+        reserveBtn.innerHTML = `<i class="fa-solid fa-ban"></i> Vehicle Currently ${vehicle.Status}`;
+      } else {
+        reserveBtn.href = `reservation.html?vehicleId=${vehicle.VehicleID}`;
+      }
+
+      const feedbacks = DB.getAll(DB.STORAGE_KEYS.FEEDBACK).filter(f => f.VehicleID === vehicle.VehicleID);
+      const fbList = document.getElementById('feedback-list');
+      
+      if (feedbacks.length === 0) {
+        fbList.innerHTML = `<p style="font-size: 0.9rem; color: var(--text-muted);">No reviews posted for this car yet.</p>`;
+      } else {
+        feedbacks.forEach(f => {
+          const cust = DB.getById(DB.STORAGE_KEYS.CUSTOMERS, 'CustomerID', f.CustomerID);
+          fbList.innerHTML += `
+            <div style="padding: 1rem 0; border-bottom: 1px solid var(--border);">
+              <div style="display: flex; justify-content: space-between;">
+                <strong>${cust ? cust.Name : 'Verified Indian Customer'}</strong>
+                <div style="color: #f59e0b;"><i class="fa-solid fa-star"></i> ${f.Rating} / 5</div>
+              </div>
+              <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.35rem;">"${f.Comments}"</p>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Date: ${f.FeedbackDate}</div>
+            </div>
+          `;
+        });
+      }
+    });
+  </script>
+</body>
+</html>

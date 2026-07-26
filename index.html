@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DriveHub India - Self-Drive Car Rental DBMS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Universal Header / Navigation Bar -->
+  <div id="navbar-mount"></div>
+
+  <!-- Hero Section -->
+  <header style="background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%); color: white; padding: 4rem 1.5rem 5rem;">
+    <div style="max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;">
+      <div>
+        <span style="background: rgba(255,255,255,0.15); padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">DBMS Project • Indian Market Edition</span>
+        <h1 style="font-size: 2.6rem; font-weight: 800; margin-top: 1rem; line-height: 1.25;">Self-Drive Car Rental System for India</h1>
+        <p style="margin-top: 1rem; font-size: 1.05rem; color: #dbeafe; line-height: 1.6;">Book top Indian vehicles (Swift, Nexon, Creta, XUV700, Fortuner, Nexon EV) across Hyderabad, Bengaluru, Chennai, Kochi, Mumbai & Delhi.</p>
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+          <a href="search-cars.html" class="btn btn-success" style="padding: 0.85rem 1.75rem; font-size: 1rem;"><i class="fa-solid fa-magnifying-glass"></i> Explore Cars in India</a>
+          <a href="login.html" class="btn btn-outline" style="border-color: white; color: white; padding: 0.85rem 1.75rem; font-size: 1rem;"><i class="fa-solid fa-right-to-bracket"></i> Login / Role Access</a>
+        </div>
+      </div>
+
+      <!-- Quick Search Widget Card -->
+      <div class="card" style="color: var(--text-main); box-shadow: var(--shadow-xl);">
+        <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+          <i class="fa-solid fa-car"></i> Quick Indian Fleet Search
+        </h3>
+        <form action="search-cars.html" method="GET">
+          <div class="form-group">
+            <label class="form-label">Pickup City & Hub <span class="db-attr">(BranchID)</span></label>
+            <select name="branch" class="form-select" id="home-branch-select">
+              <option value="">All Indian Hubs</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Vehicle Body <span class="db-attr">(Category)</span></label>
+              <select name="category" class="form-select">
+                <option value="">All Types</option>
+                <option value="Hatchback">Hatchback (Swift/Tiago)</option>
+                <option value="Compact SUV">Compact SUV (Nexon)</option>
+                <option value="SUV">Mid SUV (Creta/Seltos)</option>
+                <option value="Premium SUV">Premium SUV (XUV700)</option>
+                <option value="Luxury SUV">Luxury SUV (Fortuner)</option>
+                <option value="EV">Electric (Nexon EV)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Transmission</label>
+              <select name="transmission" class="form-select">
+                <option value="">Any</option>
+                <option value="Manual">Manual</option>
+                <option value="Automatic">Automatic</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem; margin-top: 0.5rem;">
+            <i class="fa-solid fa-filter"></i> Search Indian Vehicles
+          </button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Featured Fleet Section -->
+    <div class="page-header">
+      <div>
+        <h2 class="page-title"><i class="fa-solid fa-fire" style="color: #f59e0b;"></i> Popular Cars in India</h2>
+        <p class="page-subtitle">Available fleet records in the <code>Vehicle</code> table with Indian registration numbers</p>
+      </div>
+      <a href="search-cars.html" class="btn btn-outline">View All Fleet <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+
+    <div class="grid grid-4" id="featured-vehicles-grid">
+      <!-- Populated via JS -->
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <div class="brand-logo"><i class="fa-solid fa-car-side"></i> DriveHub India DBMS</div>
+        <p class="footer-text">Indian self-drive car rental portal project demonstrating relational tables, UPI payments, and multi-city branch management.</p>
+      </div>
+      <div>
+        <h4 style="color: white; margin-bottom: 0.75rem;">DBMS Portals</h4>
+        <ul style="list-style: none; font-size: 0.85rem; line-height: 2;">
+          <li><a href="customer-dashboard.html" style="color: #94a3b8;">Customer Portal</a></li>
+          <li><a href="employee-dashboard.html" style="color: #94a3b8;">Employee Desk</a></li>
+          <li><a href="admin-dashboard.html" style="color: #94a3b8;">Administrator Console</a></li>
+          <li><a href="reports.html" style="color: #94a3b8;">SQL Analytics</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; 2026 DriveHub India Car Rental DBMS Project.
+    </div>
+  </footer>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const branches = DB.getAll(DB.STORAGE_KEYS.BRANCHES);
+      const branchSelect = document.getElementById('home-branch-select');
+      branches.forEach(b => {
+        branchSelect.innerHTML += `<option value="${b.BranchID}">${b.City} - ${b.BranchName}</option>`;
+      });
+
+      const vehicles = DB.getAll(DB.STORAGE_KEYS.VEHICLES).slice(0, 4);
+      const featuredGrid = document.getElementById('featured-vehicles-grid');
+      
+      vehicles.forEach(v => {
+        const branch = branches.find(b => b.BranchID === v.BranchID);
+        featuredGrid.innerHTML += `
+          <div class="vehicle-card">
+            <div class="vehicle-img-wrap">
+              <img src="${v.ImageUrl}" alt="${v.Make} ${v.Model}">
+              <span class="vehicle-badge-cat">${v.Category}</span>
+            </div>
+            <div class="vehicle-body">
+              <h3 class="vehicle-title">${v.Make} ${v.Model}</h3>
+              <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">ID: ${v.VehicleID} | Reg: ${v.RegistrationNo}</div>
+              <div class="vehicle-specs">
+                <span><i class="fa-solid fa-gears"></i> ${v.Transmission}</span>
+                <span><i class="fa-solid fa-gas-pump"></i> ${v.FuelType}</span>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${branch ? `${branch.City} (${branch.BranchName})` : 'Main Hub'}
+              </div>
+              <div class="vehicle-price">
+                ${App.formatCurrency(v.DailyRate)} <span>/ day</span>
+              </div>
+              <a href="vehicle-details.html?id=${v.VehicleID}" class="btn btn-primary btn-sm" style="margin-top: 0.75rem; width: 100%;">
+                Book Self-Drive
+              </a>
+            </div>
+          </div>
+        `;
+      });
+    });
+  </script>
+</body>
+</html>

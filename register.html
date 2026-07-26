@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Registration - DriveHub India</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="navbar-mount"></div>
+
+  <main class="main-content" style="max-width: 640px;">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-user-plus"></i> Customer Registration</h1>
+        <p class="page-subtitle">Inserts new customer record into <code>Customer</code> entity table</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <form id="register-form">
+        <div class="form-group">
+          <label class="form-label">Full Name <span class="db-attr">(Customer.Name)</span></label>
+          <input type="text" id="cust-name" class="form-control" placeholder="e.g. Vikramaditya Rao" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Email Address <span class="db-attr">(Customer.Email)</span></label>
+            <input type="email" id="cust-email" class="form-control" placeholder="vikram@example.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mobile Number <span class="db-attr">(Customer.Phone)</span></label>
+            <input type="tel" id="cust-phone" class="form-control" placeholder="+91-9876543210" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Indian Driving License <span class="db-attr">(Customer.DLNumber)</span></label>
+            <input type="text" id="cust-dl" class="form-control" placeholder="TS0920230048123" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-control" placeholder="••••••••" required>
+          </div>
+        </div>
+
+        <div style="background: var(--primary-light); padding: 1rem; border-radius: var(--radius-md); border: 1px solid #bfdbfe; margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--primary);"><i class="fa-solid fa-database"></i> SQL Insert Statement:</h4>
+          <code style="font-size: 0.8rem; color: #1e3a8a; display: block; margin-top: 0.25rem;">
+            INSERT INTO Customer (CustomerID, Name, Email, Phone, DLNumber, RegistrationDate, Status)<br>
+            VALUES ('CUST-1005', [Name], [Email], [Phone], [DLNumber], CURRENT_DATE, 'Active');
+          </code>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; font-size: 1rem;">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Register & Insert Record
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const regForm = document.getElementById('register-form');
+
+      regForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const customers = DB.getAll(DB.STORAGE_KEYS.CUSTOMERS);
+        const newId = `CUST-${1001 + customers.length}`;
+
+        const newCustomer = {
+          CustomerID: newId,
+          Name: document.getElementById('cust-name').value,
+          Email: document.getElementById('cust-email').value,
+          Phone: document.getElementById('cust-phone').value,
+          DLNumber: document.getElementById('cust-dl').value,
+          RegistrationDate: new Date().toISOString().split('T')[0],
+          Status: 'Active'
+        };
+
+        DB.insert(DB.STORAGE_KEYS.CUSTOMERS, newCustomer);
+        DB.setCurrentUser({ role: 'Customer', id: newId, name: newCustomer.Name, email: newCustomer.Email });
+
+        App.showToast(`New Customer Record ${newId} inserted successfully!`, 'success');
+
+        setTimeout(() => {
+          window.location.href = 'customer-dashboard.html';
+        }, 600);
+      });
+    });
+  </script>
+</body>
+</html>

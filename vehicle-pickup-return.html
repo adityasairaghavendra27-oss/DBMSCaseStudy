@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Pickup & Return - DriveHub DBMS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="navbar-mount"></div>
+
+  <main class="main-content" style="max-width: 960px;">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-key"></i> Vehicle Pickup & Return Operations</h1>
+        <p class="page-subtitle">Inserts/Updates records in <code>Rental</code> and <code>Vehicle</code> entities, calculating mileage & fuel surcharges</p>
+      </div>
+      <div class="db-entity-badge"><i class="fa-solid fa-handshake"></i> Entities: Rental, Reservation, Vehicle</div>
+    </div>
+
+    <!-- Toggle Action Bar -->
+    <div class="card" style="margin-bottom: 2rem; background: var(--primary-light);">
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <label style="font-weight: 700; color: var(--primary);">Select Mode:</label>
+        <button id="mode-btn-pickup" class="btn btn-primary" onclick="setMode('pickup')"><i class="fa-solid fa-car"></i> Handover Pickup Desk</button>
+        <button id="mode-btn-return" class="btn btn-secondary" onclick="setMode('return')"><i class="fa-solid fa-rotate-left"></i> Check-in Return Desk</button>
+      </div>
+    </div>
+
+    <!-- Mode 1: Vehicle Pickup Form -->
+    <div id="section-pickup" class="card">
+      <h3 class="card-title" style="margin-bottom: 1.25rem;"><i class="fa-solid fa-key" style="color: var(--success);"></i> Vehicle Key Pickup Dispatch</h3>
+
+      <form id="pickup-form">
+        <div class="form-group">
+          <label class="form-label">Select Confirmed Reservation <span class="db-attr">(ReservationID)</span></label>
+          <select id="pickup-res-id" class="form-select" required>
+            <!-- Filled via JS -->
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Staff Inspector <span class="db-attr">(EmployeeID)</span></label>
+            <input type="text" id="pickup-emp-id" class="form-control" value="EMP-8001" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pickup Date & Time <span class="db-attr">(PickupDate)</span></label>
+            <input type="datetime-local" id="pickup-date" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Initial Odometer (Miles) <span class="db-attr">(InitialOdometer)</span></label>
+            <input type="number" id="pickup-odometer" class="form-control" value="15200" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Initial Fuel Level <span class="db-attr">(InitialFuel)</span></label>
+            <select id="pickup-fuel" class="form-select">
+              <option value="100%">100% Full Tank</option>
+              <option value="90%">90% Full</option>
+              <option value="75%">75% 3/4 Tank</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.85rem; font-weight: 700;"><i class="fa-solid fa-list-check"></i> Inspection Checklist</h4>
+          <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem; font-size: 0.85rem;">
+            <label><input type="checkbox" checked required> No major scratches/dents</label>
+            <label><input type="checkbox" checked required> Clean interior</label>
+            <label><input type="checkbox" checked required> Spare tire & tools present</label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-success" style="width: 100%; padding: 0.85rem; font-size: 1rem;">
+          <i class="fa-solid fa-paper-plane"></i> Insert Rental Record & Dispatch Vehicle
+        </button>
+      </form>
+    </div>
+
+    <!-- Mode 2: Vehicle Return Form -->
+    <div id="section-return" class="card" style="display: none;">
+      <h3 class="card-title" style="margin-bottom: 1.25rem;"><i class="fa-solid fa-square-check" style="color: var(--primary);"></i> Vehicle Check-in Return Inspection</h3>
+
+      <form id="return-form">
+        <div class="form-group">
+          <label class="form-label">Select Active Rental <span class="db-attr">(RentalID)</span></label>
+          <select id="return-rental-id" class="form-select" required>
+            <!-- Filled via JS -->
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Return Date & Time <span class="db-attr">(ReturnDate)</span></label>
+            <input type="datetime-local" id="return-date" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Final Odometer Reading <span class="db-attr">(FinalOdometer)</span></label>
+            <input type="number" id="return-odometer" class="form-control" value="15480" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Final Fuel Level <span class="db-attr">(FinalFuel)</span></label>
+            <select id="return-fuel" class="form-select">
+              <option value="100%">100% Full Tank</option>
+              <option value="75%">75% (Refuel Charge Applicable)</option>
+              <option value="50%">50% (Refuel Charge Applicable)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Calculated Extra Charges ($) <span class="db-attr">(ExtraCharges)</span></label>
+            <input type="number" id="return-extra-charges" class="form-control" value="0" step="5">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem;">
+          <i class="fa-solid fa-flag-checkered"></i> Complete Return & Set Vehicle Status to 'Available'
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const modeParam = App.getParam('action') || 'pickup';
+      setMode(modeParam);
+
+      // Populate Pickups dropdown
+      const reservations = DB.getReservationsWithDetails().filter(r => r.Status === 'Confirmed');
+      const pickupSelect = document.getElementById('pickup-res-id');
+      reservations.forEach(r => {
+        pickupSelect.innerHTML += `<option value="${r.ReservationID}">${r.ReservationID} - ${r.CustomerName} (${r.VehicleName})</option>`;
+      });
+
+      // Populate Returns dropdown
+      const rentals = DB.getRentalsWithDetails().filter(r => r.Status === 'Active');
+      const returnSelect = document.getElementById('return-rental-id');
+      rentals.forEach(r => {
+        returnSelect.innerHTML += `<option value="${r.RentalID}">${r.RentalID} - ${r.CustomerName} (${r.VehicleName})</option>`;
+      });
+
+      // Default Datetime values
+      const nowStr = new Date().toISOString().slice(0, 16);
+      document.getElementById('pickup-date').value = nowStr;
+      document.getElementById('return-date').value = nowStr;
+
+      // Pickup Submit
+      document.getElementById('pickup-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const resId = pickupSelect.value;
+        const res = DB.getById(DB.STORAGE_KEYS.RESERVATIONS, 'ReservationID', resId);
+        if (!res) return;
+
+        const allRentals = DB.getAll(DB.STORAGE_KEYS.RENTALS);
+        const rentId = `RENT-${3001 + allRentals.length}`;
+
+        const newRental = {
+          RentalID: rentId,
+          ReservationID: resId,
+          EmployeeID: document.getElementById('pickup-emp-id').value,
+          PickupDate: document.getElementById('pickup-date').value.replace('T', ' '),
+          ReturnDate: null,
+          InitialOdometer: parseInt(document.getElementById('pickup-odometer').value),
+          FinalOdometer: null,
+          InitialFuel: document.getElementById('pickup-fuel').value,
+          FinalFuel: null,
+          ExtraCharges: 0,
+          TotalPaid: res.TotalAmount,
+          Status: 'Active'
+        };
+
+        // 1. Insert Rental record
+        DB.insert(DB.STORAGE_KEYS.RENTALS, newRental);
+
+        // 2. Update Reservation status to 'Active'
+        DB.update(DB.STORAGE_KEYS.RESERVATIONS, 'ReservationID', resId, { Status: 'Active' });
+
+        // 3. Update Vehicle status to 'Rented'
+        DB.update(DB.STORAGE_KEYS.VEHICLES, 'VehicleID', res.VehicleID, { Status: 'Rented' });
+
+        App.showToast(`Rental Record ${rentId} created! Vehicle ${res.VehicleID} set to 'Rented'.`, 'success');
+
+        setTimeout(() => window.location.href = 'employee-dashboard.html', 600);
+      });
+
+      // Return Submit
+      document.getElementById('return-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const rentId = returnSelect.value;
+        const rental = DB.getById(DB.STORAGE_KEYS.RENTALS, 'RentalID', rentId);
+        if (!rental) return;
+
+        const extraCharges = parseFloat(document.getElementById('return-extra-charges').value) || 0;
+
+        // 1. Update Rental record
+        DB.update(DB.STORAGE_KEYS.RENTALS, 'RentalID', rentId, {
+          ReturnDate: document.getElementById('return-date').value.replace('T', ' '),
+          FinalOdometer: parseInt(document.getElementById('return-odometer').value),
+          FinalFuel: document.getElementById('return-fuel').value,
+          ExtraCharges: extraCharges,
+          Status: 'Completed'
+        });
+
+        // 2. Update Reservation status to 'Completed'
+        DB.update(DB.STORAGE_KEYS.RESERVATIONS, 'ReservationID', rental.ReservationID, { Status: 'Completed' });
+
+        // 3. Get VehicleID from Reservation and set Vehicle status to 'Available'
+        const res = DB.getById(DB.STORAGE_KEYS.RESERVATIONS, 'ReservationID', rental.ReservationID);
+        if (res) {
+          DB.update(DB.STORAGE_KEYS.VEHICLES, 'VehicleID', res.VehicleID, { Status: 'Available' });
+        }
+
+        App.showToast(`Rental ${rentId} returned! Vehicle status updated to 'Available'.`, 'success');
+
+        setTimeout(() => window.location.href = 'employee-dashboard.html', 600);
+      });
+    });
+
+    function setMode(mode) {
+      const pSec = document.getElementById('section-pickup');
+      const rSec = document.getElementById('section-return');
+      const pBtn = document.getElementById('mode-btn-pickup');
+      const rBtn = document.getElementById('mode-btn-return');
+
+      if (mode === 'pickup') {
+        pSec.style.display = 'block';
+        rSec.style.display = 'none';
+        pBtn.className = 'btn btn-primary';
+        rBtn.className = 'btn btn-secondary';
+      } else {
+        pSec.style.display = 'none';
+        rSec.style.display = 'block';
+        pBtn.className = 'btn btn-secondary';
+        rBtn.className = 'btn btn-primary';
+      }
+    }
+  </script>
+</body>
+</html>

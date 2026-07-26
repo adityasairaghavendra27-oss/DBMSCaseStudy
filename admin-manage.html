@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Database Entities - DriveHub India</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="navbar-mount"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-database"></i> Database Entity Management (CRUD Desk)</h1>
+        <p class="page-subtitle">Direct SQL <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, and <code>SELECT</code> table operations</p>
+      </div>
+      <div id="active-entity-badge" class="db-entity-badge"><i class="fa-solid fa-table"></i> Entity: Vehicle</div>
+    </div>
+
+    <!-- Entity Navigation Tabs -->
+    <div class="card" style="margin-bottom: 1.5rem; padding: 0.75rem 1.5rem; background: var(--bg-main);">
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <button id="tab-btn-vehicles" class="btn btn-primary btn-sm" onclick="switchTab('vehicles')"><i class="fa-solid fa-car"></i> Vehicles Table</button>
+        <button id="tab-btn-customers" class="btn btn-secondary btn-sm" onclick="switchTab('customers')"><i class="fa-solid fa-users"></i> Customers Table</button>
+        <button id="tab-btn-employees" class="btn btn-secondary btn-sm" onclick="switchTab('employees')"><i class="fa-solid fa-user-tie"></i> Employees Table</button>
+        <button id="tab-btn-branches" class="btn btn-secondary btn-sm" onclick="switchTab('branches')"><i class="fa-solid fa-building"></i> Branches Table</button>
+      </div>
+    </div>
+
+    <!-- TAB 1: VEHICLES -->
+    <div id="tab-vehicles" class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-car"></i> Fleet Inventory (Vehicle Entity)</div>
+        <button class="btn btn-primary btn-sm" onclick="App.openModal('add-vehicle-modal')"><i class="fa-solid fa-plus"></i> Add New Vehicle Record</button>
+      </div>
+      <div class="table-container">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>VehicleID (PK)</th>
+              <th>Make & Model</th>
+              <th>Year</th>
+              <th>Category</th>
+              <th>Reg No</th>
+              <th>Daily Rate (₹)</th>
+              <th>BranchID (FK)</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-vehicles-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: CUSTOMERS -->
+    <div id="tab-customers" class="card" style="display: none;">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-users"></i> Customer Records (Customer Entity)</div>
+        <button class="btn btn-primary btn-sm" onclick="App.openModal('add-customer-modal')"><i class="fa-solid fa-user-plus"></i> Add Customer</button>
+      </div>
+      <div class="table-container">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>CustomerID (PK)</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>DL Number</th>
+              <th>Registration Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-customers-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: EMPLOYEES -->
+    <div id="tab-employees" class="card" style="display: none;">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-user-tie"></i> Staff Directory (Employee Entity)</div>
+        <button class="btn btn-primary btn-sm" onclick="App.openModal('add-employee-modal')"><i class="fa-solid fa-plus"></i> Add Employee</button>
+      </div>
+      <div class="table-container">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>EmployeeID (PK)</th>
+              <th>Name</th>
+              <th>Role</th>
+              <th>BranchID (FK)</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-employees-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 4: BRANCHES -->
+    <div id="tab-branches" class="card" style="display: none;">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-building"></i> Branch Locations (Branch Entity)</div>
+        <button class="btn btn-primary btn-sm" onclick="App.openModal('add-branch-modal')"><i class="fa-solid fa-plus"></i> Add Branch</button>
+      </div>
+      <div class="table-container">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>BranchID (PK)</th>
+              <th>Branch Name</th>
+              <th>City</th>
+              <th>Address</th>
+              <th>Phone</th>
+              <th>Capacity</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-branches-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: ADD VEHICLE -->
+  <div class="modal-overlay" id="add-vehicle-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title"><i class="fa-solid fa-car"></i> INSERT INTO Vehicle Table</div>
+        <button class="modal-close" onclick="App.closeModal('add-vehicle-modal')">&times;</button>
+      </div>
+      <form id="form-add-vehicle">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Make <span class="db-attr">(Make)</span></label><input type="text" id="v-make" class="form-control" placeholder="Maruti Suzuki" required></div>
+            <div class="form-group"><label class="form-label">Model <span class="db-attr">(Model)</span></label><input type="text" id="v-model" class="form-control" placeholder="Swift VXi" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Year <span class="db-attr">(Year)</span></label><input type="number" id="v-year" class="form-control" value="2023" required></div>
+            <div class="form-group">
+              <label class="form-label">Category <span class="db-attr">(Category)</span></label>
+              <select id="v-cat" class="form-select">
+                <option value="Hatchback">Hatchback</option>
+                <option value="Compact SUV">Compact SUV</option>
+                <option value="SUV">SUV</option>
+                <option value="Premium SUV">Premium SUV</option>
+                <option value="Luxury SUV">Luxury SUV</option>
+                <option value="Sedan">Sedan</option>
+                <option value="EV">EV</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Registration No <span class="db-attr">(RegistrationNo)</span></label><input type="text" id="v-reg" class="form-control" placeholder="TS09AB1234" required></div>
+            <div class="form-group"><label class="form-label">Daily Rate (₹) <span class="db-attr">(DailyRate)</span></label><input type="number" id="v-rate" class="form-control" value="1500" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Transmission</label>
+              <select id="v-trans" class="form-select"><option value="Manual">Manual</option><option value="Automatic">Automatic</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fuel Type</label>
+              <select id="v-fuel" class="form-select"><option value="Petrol">Petrol</option><option value="Diesel">Diesel</option><option value="CNG/Petrol">CNG/Petrol</option><option value="Electric">Electric</option></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Branch <span class="db-attr">(BranchID FK)</span></label>
+            <select id="v-branch" class="form-select"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Image URL</label>
+            <input type="url" id="v-img" class="form-control" value="https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=600&q=80">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="App.closeModal('add-vehicle-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">INSERT Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD CUSTOMER -->
+  <div class="modal-overlay" id="add-customer-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title"><i class="fa-solid fa-user-plus"></i> INSERT INTO Customer Table</div>
+        <button class="modal-close" onclick="App.closeModal('add-customer-modal')">&times;</button>
+      </div>
+      <form id="form-add-customer">
+        <div class="modal-body">
+          <div class="form-group"><label class="form-label">Full Name <span class="db-attr">(Name)</span></label><input type="text" id="c-name" class="form-control" placeholder="Vikramaditya Rao" required></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Email <span class="db-attr">(Email)</span></label><input type="email" id="c-email" class="form-control" placeholder="vikram@example.com" required></div>
+            <div class="form-group"><label class="form-label">Phone <span class="db-attr">(Phone)</span></label><input type="tel" id="c-phone" class="form-control" placeholder="+91-9876543210" required></div>
+          </div>
+          <div class="form-group"><label class="form-label">Driving License <span class="db-attr">(DLNumber)</span></label><input type="text" id="c-dl" class="form-control" placeholder="TS0920230048123" required></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="App.closeModal('add-customer-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">INSERT Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD EMPLOYEE -->
+  <div class="modal-overlay" id="add-employee-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title"><i class="fa-solid fa-user-tie"></i> INSERT INTO Employee Table</div>
+        <button class="modal-close" onclick="App.closeModal('add-employee-modal')">&times;</button>
+      </div>
+      <form id="form-add-employee">
+        <div class="modal-body">
+          <div class="form-group"><label class="form-label">Employee Name <span class="db-attr">(Name)</span></label><input type="text" id="e-name" class="form-control" placeholder="Karthik Naidu" required></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Email <span class="db-attr">(Email)</span></label><input type="email" id="e-email" class="form-control" placeholder="karthik@drivehub.in" required></div>
+            <div class="form-group"><label class="form-label">Phone <span class="db-attr">(Phone)</span></label><input type="tel" id="e-phone" class="form-control" placeholder="+91-98765-01005" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Role <span class="db-attr">(Role)</span></label>
+              <select id="e-role" class="form-select">
+                <option value="Service Agent">Service Agent</option>
+                <option value="Inspector">Inspector</option>
+                <option value="Manager">Manager</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Branch <span class="db-attr">(BranchID FK)</span></label>
+              <select id="e-branch" class="form-select"></select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="App.closeModal('add-employee-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">INSERT Employee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD BRANCH -->
+  <div class="modal-overlay" id="add-branch-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title"><i class="fa-solid fa-building"></i> INSERT INTO Branch Table</div>
+        <button class="modal-close" onclick="App.closeModal('add-branch-modal')">&times;</button>
+      </div>
+      <form id="form-add-branch">
+        <div class="modal-body">
+          <div class="form-group"><label class="form-label">Branch Name <span class="db-attr">(BranchName)</span></label><input type="text" id="b-name" class="form-control" placeholder="Beach Road Hub" required></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">City <span class="db-attr">(City)</span></label><input type="text" id="b-city" class="form-control" placeholder="Visakhapatnam" required></div>
+            <div class="form-group"><label class="form-label">Capacity <span class="db-attr">(Capacity)</span></label><input type="number" id="b-cap" class="form-control" value="40" required></div>
+          </div>
+          <div class="form-group"><label class="form-label">Address <span class="db-attr">(Address)</span></label><input type="text" id="b-addr" class="form-control" placeholder="RK Beach Road" required></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Phone <span class="db-attr">(Phone)</span></label><input type="tel" id="b-phone" class="form-control" placeholder="+91-891-5550107" required></div>
+            <div class="form-group"><label class="form-label">Email <span class="db-attr">(Email)</span></label><input type="email" id="b-email" class="form-control" placeholder="vizag@drivehub.in" required></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="App.closeModal('add-branch-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">INSERT Branch</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabParam = App.getParam('tab') || 'vehicles';
+      switchTab(tabParam);
+
+      const branches = DB.getAll(DB.STORAGE_KEYS.BRANCHES);
+      const vBranchSel = document.getElementById('v-branch');
+      const eBranchSel = document.getElementById('e-branch');
+
+      branches.forEach(b => {
+        vBranchSel.innerHTML += `<option value="${b.BranchID}">${b.City} - ${b.BranchName}</option>`;
+        eBranchSel.innerHTML += `<option value="${b.BranchID}">${b.City} - ${b.BranchName}</option>`;
+      });
+
+      renderAllTables();
+
+      // Add Vehicle
+      document.getElementById('form-add-vehicle').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const vehicles = DB.getAll(DB.STORAGE_KEYS.VEHICLES);
+        const id = `VEH-${501 + vehicles.length}`;
+
+        const newV = {
+          VehicleID: id,
+          Make: document.getElementById('v-make').value,
+          Model: document.getElementById('v-model').value,
+          Year: parseInt(document.getElementById('v-year').value),
+          Category: document.getElementById('v-cat').value,
+          RegistrationNo: document.getElementById('v-reg').value,
+          DailyRate: parseFloat(document.getElementById('v-rate').value),
+          Transmission: document.getElementById('v-trans').value,
+          FuelType: document.getElementById('v-fuel').value,
+          BranchID: document.getElementById('v-branch').value,
+          ImageUrl: document.getElementById('v-img').value,
+          Status: 'Available'
+        };
+
+        DB.insert(DB.STORAGE_KEYS.VEHICLES, newV);
+        App.showToast(`INSERT into Vehicle successful: ${id}`, 'success');
+        App.closeModal('add-vehicle-modal');
+        renderAllTables();
+      });
+
+      // Add Customer
+      document.getElementById('form-add-customer').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const custs = DB.getAll(DB.STORAGE_KEYS.CUSTOMERS);
+        const id = `CUST-${1001 + custs.length}`;
+
+        const newC = {
+          CustomerID: id,
+          Name: document.getElementById('c-name').value,
+          Email: document.getElementById('c-email').value,
+          Phone: document.getElementById('c-phone').value,
+          DLNumber: document.getElementById('c-dl').value,
+          RegistrationDate: new Date().toISOString().split('T')[0],
+          Status: 'Active'
+        };
+
+        DB.insert(DB.STORAGE_KEYS.CUSTOMERS, newC);
+        App.showToast(`INSERT into Customer successful: ${id}`, 'success');
+        App.closeModal('add-customer-modal');
+        renderAllTables();
+      });
+
+      // Add Employee
+      document.getElementById('form-add-employee').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const emps = DB.getAll(DB.STORAGE_KEYS.EMPLOYEES);
+        const id = `EMP-${8001 + emps.length}`;
+
+        const newE = {
+          EmployeeID: id,
+          Name: document.getElementById('e-name').value,
+          Email: document.getElementById('e-email').value,
+          Phone: document.getElementById('e-phone').value,
+          Role: document.getElementById('e-role').value,
+          BranchID: document.getElementById('e-branch').value,
+          HireDate: new Date().toISOString().split('T')[0],
+          Status: 'Active'
+        };
+
+        DB.insert(DB.STORAGE_KEYS.EMPLOYEES, newE);
+        App.showToast(`INSERT into Employee successful: ${id}`, 'success');
+        App.closeModal('add-employee-modal');
+        renderAllTables();
+      });
+
+      // Add Branch
+      document.getElementById('form-add-branch').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const bList = DB.getAll(DB.STORAGE_KEYS.BRANCHES);
+        const id = `BR-${101 + bList.length}`;
+
+        const newB = {
+          BranchID: id,
+          BranchName: document.getElementById('b-name').value,
+          City: document.getElementById('b-city').value,
+          Address: document.getElementById('b-addr').value,
+          Phone: document.getElementById('b-phone').value,
+          Email: document.getElementById('b-email').value,
+          Capacity: parseInt(document.getElementById('b-cap').value)
+        };
+
+        DB.insert(DB.STORAGE_KEYS.BRANCHES, newB);
+        App.showToast(`INSERT into Branch successful: ${id}`, 'success');
+        App.closeModal('add-branch-modal');
+        renderAllTables();
+      });
+
+      function renderAllTables() {
+        // Vehicles
+        const vehicles = DB.getAll(DB.STORAGE_KEYS.VEHICLES);
+        const vTbl = document.getElementById('tbl-vehicles-body');
+        vTbl.innerHTML = '';
+        vehicles.forEach(v => {
+          vTbl.innerHTML += `
+            <tr>
+              <td><span class="table-pk">${v.VehicleID}</span></td>
+              <td><strong>${v.Make} ${v.Model}</strong></td>
+              <td>${v.Year}</td>
+              <td>${v.Category}</td>
+              <td><code style="font-size: 0.8rem;">${v.RegistrationNo}</code></td>
+              <td><strong>${App.formatCurrency(v.DailyRate)}</strong></td>
+              <td><span class="table-pk" style="background:#e0e7ff; color:#3730a3;">${v.BranchID}</span></td>
+              <td><span class="badge badge-${v.Status.toLowerCase().replace(' ', '-')}">${v.Status}</span></td>
+              <td><button onclick="deleteRecord('${DB.STORAGE_KEYS.VEHICLES}', 'VehicleID', '${v.VehicleID}')" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i> DELETE</button></td>
+            </tr>
+          `;
+        });
+
+        // Customers
+        const customers = DB.getAll(DB.STORAGE_KEYS.CUSTOMERS);
+        const cTbl = document.getElementById('tbl-customers-body');
+        cTbl.innerHTML = '';
+        customers.forEach(c => {
+          cTbl.innerHTML += `
+            <tr>
+              <td><span class="table-pk">${c.CustomerID}</span></td>
+              <td><strong>${c.Name}</strong></td>
+              <td>${c.Email}</td>
+              <td>${c.Phone}</td>
+              <td><code>${c.DLNumber}</code></td>
+              <td>${c.RegistrationDate}</td>
+              <td><span class="badge badge-active">${c.Status}</span></td>
+              <td><button onclick="deleteRecord('${DB.STORAGE_KEYS.CUSTOMERS}', 'CustomerID', '${c.CustomerID}')" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i> DELETE</button></td>
+            </tr>
+          `;
+        });
+
+        // Employees
+        const employees = DB.getAll(DB.STORAGE_KEYS.EMPLOYEES);
+        const eTbl = document.getElementById('tbl-employees-body');
+        eTbl.innerHTML = '';
+        employees.forEach(e => {
+          eTbl.innerHTML += `
+            <tr>
+              <td><span class="table-pk">${e.EmployeeID}</span></td>
+              <td><strong>${e.Name}</strong></td>
+              <td><span class="badge badge-info">${e.Role}</span></td>
+              <td><span class="table-pk" style="background:#e0e7ff; color:#3730a3;">${e.BranchID}</span></td>
+              <td>${e.Email}</td>
+              <td>${e.Phone}</td>
+              <td><span class="badge badge-active">${e.Status}</span></td>
+              <td><button onclick="deleteRecord('${DB.STORAGE_KEYS.EMPLOYEES}', 'EmployeeID', '${e.EmployeeID}')" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i> DELETE</button></td>
+            </tr>
+          `;
+        });
+
+        // Branches
+        const bList = DB.getAll(DB.STORAGE_KEYS.BRANCHES);
+        const bTbl = document.getElementById('tbl-branches-body');
+        bTbl.innerHTML = '';
+        bList.forEach(b => {
+          bTbl.innerHTML += `
+            <tr>
+              <td><span class="table-pk">${b.BranchID}</span></td>
+              <td><strong>${b.BranchName}</strong></td>
+              <td>${b.City}</td>
+              <td>${b.Address}</td>
+              <td>${b.Phone}</td>
+              <td><strong>${b.Capacity} vehicles</strong></td>
+              <td><button onclick="deleteRecord('${DB.STORAGE_KEYS.BRANCHES}', 'BranchID', '${b.BranchID}')" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i> DELETE</button></td>
+            </tr>
+          `;
+        });
+      }
+
+      window.deleteRecord = function(tableKey, pkName, id) {
+        if (confirm(`Are you sure you want to execute DELETE FROM table WHERE ${pkName} = '${id}'?`)) {
+          DB.delete(tableKey, pkName, id);
+          App.showToast(`Executed DELETE on record ${id}`, 'info');
+          renderAllTables();
+        }
+      };
+    });
+
+    function switchTab(tab) {
+      const tabs = ['vehicles', 'customers', 'employees', 'branches'];
+      tabs.forEach(t => {
+        const sec = document.getElementById(`tab-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (sec && btn) {
+          if (t === tab) {
+            sec.style.display = 'block';
+            btn.className = 'btn btn-primary btn-sm';
+          } else {
+            sec.style.display = 'none';
+            btn.className = 'btn btn-secondary btn-sm';
+          }
+        }
+      });
+
+      const badge = document.getElementById('active-entity-badge');
+      if (badge) badge.innerHTML = `<i class="fa-solid fa-table"></i> Entity: ${tab.toUpperCase()}`;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Cars - DriveHub India</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="navbar-mount"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-magnifying-glass"></i> Search Indian Fleet Vehicles</h1>
+        <p class="page-subtitle">Executes parameterized SQL SELECT queries against the <code>Vehicle</code> and <code>Branch</code> entity tables</p>
+      </div>
+      <div id="search-query-display" style="font-family: monospace; font-size: 0.8rem; background: #e0e7ff; color: #3730a3; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm);">
+        SELECT * FROM Vehicle WHERE Status = 'Available';
+      </div>
+    </div>
+
+    <!-- Filter Control Panel Bar -->
+    <div class="card" style="margin-bottom: 2rem;">
+      <form id="filter-form" style="display: grid; grid-template-columns: repeat(5, 1fr) auto; gap: 1rem; align-items: end;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Category <span class="db-attr">(Category)</span></label>
+          <select id="filter-category" class="form-select">
+            <option value="">All Categories</option>
+            <option value="Hatchback">Hatchback (Swift/Tiago)</option>
+            <option value="Compact SUV">Compact SUV (Nexon)</option>
+            <option value="SUV">Mid SUV (Creta/Seltos)</option>
+            <option value="Premium SUV">Premium SUV (XUV700)</option>
+            <option value="Luxury SUV">Luxury SUV (Fortuner)</option>
+            <option value="Sedan">Sedan (City)</option>
+            <option value="EV">Electric (Nexon EV)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Branch City <span class="db-attr">(BranchID)</span></label>
+          <select id="filter-branch" class="form-select">
+            <option value="">All Indian Hubs</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Transmission</label>
+          <select id="filter-transmission" class="form-select">
+            <option value="">All Transmissions</option>
+            <option value="Manual">Manual</option>
+            <option value="Automatic">Automatic</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Max Daily Rate (₹) <span class="db-attr">(DailyRate)</span></label>
+          <input type="number" id="filter-max-rate" class="form-control" placeholder="e.g. 2500" step="250">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Status <span class="db-attr">(Status)</span></label>
+          <select id="filter-status" class="form-select">
+            <option value="Available" selected>Available Only</option>
+            <option value="">All Statuses</option>
+            <option value="Rented">Rented</option>
+            <option value="In Maintenance">In Maintenance</option>
+          </select>
+        </div>
+
+        <div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">
+            <i class="fa-solid fa-filter"></i> Apply Filter
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Vehicle Grid Results -->
+    <div class="grid grid-3" id="vehicles-results-grid">
+      <!-- Populated via JS -->
+    </div>
+  </main>
+
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const branches = DB.getAll(DB.STORAGE_KEYS.BRANCHES);
+      const branchSelect = document.getElementById('filter-branch');
+      branches.forEach(b => {
+        branchSelect.innerHTML += `<option value="${b.BranchID}">${b.City} - ${b.BranchName}</option>`;
+      });
+
+      // Parse incoming URL query params if any
+      const categoryParam = App.getParam('category');
+      const branchParam = App.getParam('branch');
+      const transmissionParam = App.getParam('transmission');
+
+      if (categoryParam) document.getElementById('filter-category').value = categoryParam;
+      if (branchParam) document.getElementById('filter-branch').value = branchParam;
+      if (transmissionParam) document.getElementById('filter-transmission').value = transmissionParam;
+
+      renderSearchResults();
+
+      document.getElementById('filter-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        renderSearchResults();
+      });
+
+      function renderSearchResults() {
+        const category = document.getElementById('filter-category').value;
+        const branchID = document.getElementById('filter-branch').value;
+        const transmission = document.getElementById('filter-transmission').value;
+        const maxRate = document.getElementById('filter-max-rate').value;
+        const status = document.getElementById('filter-status').value;
+
+        // Build simulated SQL Query text for UI feedback
+        let sqlWhere = [];
+        if (status) sqlWhere.push(`Status = '${status}'`);
+        if (category) sqlWhere.push(`Category = '${category}'`);
+        if (branchID) sqlWhere.push(`BranchID = '${branchID}'`);
+        if (transmission) sqlWhere.push(`Transmission = '${transmission}'`);
+        if (maxRate) sqlWhere.push(`DailyRate <= ${maxRate}`);
+
+        const sqlText = `SELECT * FROM Vehicle ${sqlWhere.length ? 'WHERE ' + sqlWhere.join(' AND ') : ''};`;
+        document.getElementById('search-query-display').innerText = sqlText;
+
+        // Query Database
+        let vehicles = DB.getAll(DB.STORAGE_KEYS.VEHICLES);
+        if (status) vehicles = vehicles.filter(v => v.Status === status);
+        if (category) vehicles = vehicles.filter(v => v.Category === category);
+        if (branchID) vehicles = vehicles.filter(v => v.BranchID === branchID);
+        if (transmission) vehicles = vehicles.filter(v => v.Transmission === transmission);
+        if (maxRate) vehicles = vehicles.filter(v => v.DailyRate <= parseFloat(maxRate));
+
+        const grid = document.getElementById('vehicles-results-grid');
+        grid.innerHTML = '';
+
+        if (vehicles.length === 0) {
+          grid.innerHTML = `<div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted);">
+            <i class="fa-solid fa-car-side" style="font-size: 3rem; margin-bottom: 1rem; color: var(--text-light);"></i>
+            <h3>No Vehicles Match Your Query Parameters</h3>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem;">Try adjusting price limits or city hub selections.</p>
+          </div>`;
+          return;
+        }
+
+        vehicles.forEach(v => {
+          const b = branches.find(br => br.BranchID === v.BranchID);
+          grid.innerHTML += `
+            <div class="vehicle-card">
+              <div class="vehicle-img-wrap">
+                <img src="${v.ImageUrl}" alt="${v.Make} ${v.Model}">
+                <span class="vehicle-badge-cat">${v.Category}</span>
+              </div>
+              <div class="vehicle-body">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <h3 class="vehicle-title">${v.Make} ${v.Model}</h3>
+                  <span class="badge badge-${v.Status.toLowerCase().replace(' ', '-')}">${v.Status}</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">ID: ${v.VehicleID} | Reg: ${v.RegistrationNo}</div>
+                
+                <div class="vehicle-specs">
+                  <span><i class="fa-solid fa-calendar"></i> ${v.Year}</span>
+                  <span><i class="fa-solid fa-gears"></i> ${v.Transmission}</span>
+                  <span><i class="fa-solid fa-gas-pump"></i> ${v.FuelType}</span>
+                </div>
+
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                  <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${b ? `${b.City} (${b.BranchName})` : 'Main Hub'}
+                </div>
+
+                <div class="vehicle-price">
+                  ${App.formatCurrency(v.DailyRate)} <span>/ day</span>
+                </div>
+
+                <a href="vehicle-details.html?id=${v.VehicleID}" class="btn btn-primary btn-sm" style="margin-top: 0.75rem; width: 100%;">
+                  View Specs & Book
+                </a>
+              </div>
+            </div>
+          `;
+        });
+      }
+    });
+  </script>
+</body>
+</html>
