@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Database Entities - DriveHub India</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
@@ -252,6 +252,108 @@
     </div>
   </div>
 
+  
+<div class="modal-overlay" id="edit-employee-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Edit Employee</div>
+      <button class="modal-close"
+        onclick="App.closeModal('edit-employee-modal')">&times;</button>
+    </div>
+    <form id="form-edit-employee">
+      <div class="modal-body">
+        <input type="hidden" id="edit-e-id">
+
+        <label class="form-label">Name</label>
+        <input id="edit-e-name" class="form-control" required>
+
+        <label class="form-label">Email</label>
+        <input type="email" id="edit-e-email" class="form-control" required>
+
+        <label class="form-label">Phone</label>
+        <input id="edit-e-phone" class="form-control" required>
+
+        <label class="form-label">Role</label>
+        <select id="edit-e-role" class="form-select">
+          <option>Service Agent</option>
+          <option>Inspector</option>
+          <option>Manager</option>
+        </select>
+
+        <label class="form-label">Branch ID</label>
+        <input type="number" id="edit-e-branch" class="form-control" min="1" required>
+
+        <label class="form-label">Status</label>
+        <select id="edit-e-status" class="form-select">
+          <option>Active</option>
+          <option>Inactive</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary"
+          onclick="App.closeModal('edit-employee-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="edit-employee-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Edit Employee</div>
+      <button type="button" class="modal-close"
+        onclick="App.closeModal('edit-employee-modal')">&times;</button>
+    </div>
+
+    <form id="form-edit-employee">
+      <div class="modal-body">
+        <input type="hidden" id="edit-e-id">
+
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input id="edit-e-name" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="edit-e-email" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input id="edit-e-phone" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select id="edit-e-role" class="form-select">
+            <option>Service Agent</option>
+            <option>Inspector</option>
+            <option>Manager</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Branch ID</label>
+          <input type="number" id="edit-e-branch"
+            class="form-control" min="1" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="edit-e-status" class="form-select">
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary"
+          onclick="App.closeModal('edit-employee-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
   <!-- MODAL: ADD BRANCH -->
   <div class="modal-overlay" id="add-branch-modal">
     <div class="modal-content">
@@ -280,95 +382,152 @@
     </div>
   </div>
 
-  <script src="./db.js"></script>
-  <script src="./app.js"></script>
+  <script src="db.js"></script>
+  <script src="app.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const tabParam = App.getParam('tab') || 'vehicles';
       switchTab(tabParam);
 
-      const branches = DB.getAll(DB.STORAGE_KEYS.BRANCHES);
+      
       const vBranchSel = document.getElementById('v-branch');
       const eBranchSel = document.getElementById('e-branch');
 
-      branches.forEach(b => {
-        vBranchSel.innerHTML += `<option value="${b.BranchID}">${b.City} - ${b.BranchName}</option>`;
-        eBranchSel.innerHTML += `<option value="${b.BranchID}">${b.City} - ${b.BranchName}</option>`;
-      });
+      async function loadBranchOptions() {
+        try {
+          const response = await fetch('/DriveHubIndia/api/employees?table=branch&t=' + Date.now());
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+          const branches = await response.json();
+
+          [vBranchSel, eBranchSel].forEach(select => {
+            select.innerHTML = '';
+            branches.forEach(b => {
+              select.innerHTML +=
+                `<option value="${b.branchid}">${b.city} - ${b.branchname}</option>`;
+            });
+          });
+        } catch (error) {
+          alert('Branch error: ' + error.message);
+          alert('Could not load branches from PostgreSQL.');
+        }
+      }
+
+      loadBranchOptions();
 
       renderAllTables();
 
       // Add Vehicle
-      document.getElementById('form-add-vehicle').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const vehicles = DB.getAll(DB.STORAGE_KEYS.VEHICLES);
-        const id = `VEH-${501 + vehicles.length}`;
+      
+document.getElementById('form-add-vehicle').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-        const newV = {
-          VehicleID: id,
-          Make: document.getElementById('v-make').value,
-          Model: document.getElementById('v-model').value,
-          Year: parseInt(document.getElementById('v-year').value),
-          Category: document.getElementById('v-cat').value,
-          RegistrationNo: document.getElementById('v-reg').value,
-          DailyRate: parseFloat(document.getElementById('v-rate').value),
-          Transmission: document.getElementById('v-trans').value,
-          FuelType: document.getElementById('v-fuel').value,
-          BranchID: document.getElementById('v-branch').value,
-          ImageUrl: document.getElementById('v-img').value,
-          Status: 'Available'
-        };
+    const vehicle = new URLSearchParams({
+        make: document.getElementById('v-make').value.trim(),
+        model: document.getElementById('v-model').value.trim(),
+        year: document.getElementById('v-year').value,
+        category: document.getElementById('v-cat').value,
+        registrationno: document.getElementById('v-reg').value.trim(),
+        dailyrate: document.getElementById('v-rate').value,
+        transmission: document.getElementById('v-trans').value,
+        fueltype: document.getElementById('v-fuel').value,
+        branchid: document.getElementById('v-branch').value,
+        imageurl: document.getElementById('v-img').value,
+        status: 'Available'
+    });
 
-        DB.insert(DB.STORAGE_KEYS.VEHICLES, newV);
-        App.showToast(`INSERT into Vehicle successful: ${id}`, 'success');
+    try {
+        const response = await fetch('/DriveHubIndia/api/data?table=vehicle', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: vehicle
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Vehicle insert failed');
+        }
+
         App.closeModal('add-vehicle-modal');
-        renderAllTables();
-      });
+        e.target.reset();
+        await loadPostgresVehicles();
+        App.showToast('Vehicle saved to PostgreSQL!', 'success');
+    } catch (error) {
+        console.error(error);
+        alert('Vehicle was not saved: ' + error.message);
+    }
+});
+// Add Customer - PostgreSQL
+document.getElementById('form-add-customer').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-      // Add Customer
-      document.getElementById('form-add-customer').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const custs = DB.getAll(DB.STORAGE_KEYS.CUSTOMERS);
-        const id = `CUST-${1001 + custs.length}`;
+    const customer = new URLSearchParams({
+        name: document.getElementById('c-name').value.trim(),
+        email: document.getElementById('c-email').value.trim(),
+        phone: document.getElementById('c-phone').value.trim(),
+        dlnumber: document.getElementById('c-dl').value.trim(),
+        status: 'Active'
+    });
 
-        const newC = {
-          CustomerID: id,
-          Name: document.getElementById('c-name').value,
-          Email: document.getElementById('c-email').value,
-          Phone: document.getElementById('c-phone').value,
-          DLNumber: document.getElementById('c-dl').value,
-          RegistrationDate: new Date().toISOString().split('T')[0],
-          Status: 'Active'
-        };
+    try {
+        const response = await fetch('/DriveHubIndia/api/data?table=customer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: customer
+        });
 
-        DB.insert(DB.STORAGE_KEYS.CUSTOMERS, newC);
-        App.showToast(`INSERT into Customer successful: ${id}`, 'success');
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Insert failed');
+
         App.closeModal('add-customer-modal');
-        renderAllTables();
-      });
-
+        e.target.reset();
+        await loadPostgresCustomers();
+        App.showToast('Customer saved to PostgreSQL!', 'success');
+    } catch (error) {
+        alert('Customer was not saved: ' + error.message);
+    }
+});
       // Add Employee
-      document.getElementById('form-add-employee').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const emps = DB.getAll(DB.STORAGE_KEYS.EMPLOYEES);
-        const id = `EMP-${8001 + emps.length}`;
+      
+document.getElementById('form-add-employee').addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-        const newE = {
-          EmployeeID: id,
-          Name: document.getElementById('e-name').value,
-          Email: document.getElementById('e-email').value,
-          Phone: document.getElementById('e-phone').value,
-          Role: document.getElementById('e-role').value,
-          BranchID: document.getElementById('e-branch').value,
-          HireDate: new Date().toISOString().split('T')[0],
-          Status: 'Active'
-        };
+  const employee = new URLSearchParams({
+    name: document.getElementById('e-name').value.trim(),
+    email: document.getElementById('e-email').value.trim(),
+    phone: document.getElementById('e-phone').value.trim(),
+    role: document.getElementById('e-role').value,
+    branchid: document.getElementById('e-branch').value
+  });
 
-        DB.insert(DB.STORAGE_KEYS.EMPLOYEES, newE);
-        App.showToast(`INSERT into Employee successful: ${id}`, 'success');
-        App.closeModal('add-employee-modal');
-        renderAllTables();
-      });
+  try {
+    const response = await fetch('/DriveHubIndia/api/employees', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: employee
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text() || `HTTP ${response.status}`);
+    }
+
+    App.closeModal('add-employee-modal');
+    e.target.reset();
+    await loadPostgresEmployeeDirectory();
+    App.showToast('Employee saved to PostgreSQL!', 'success');
+  } catch (error) {
+    console.error('Employee insert failed:', error);
+    alert('Employee was not saved: ' + error.message);
+  }
+});
+
 
       // Add Branch
       document.getElementById('form-add-branch').addEventListener('submit', (e) => {
@@ -394,62 +553,14 @@
 
       function renderAllTables() {
         // Vehicles
-        const vehicles = DB.getAll(DB.STORAGE_KEYS.VEHICLES);
-        const vTbl = document.getElementById('tbl-vehicles-body');
-        vTbl.innerHTML = '';
-        vehicles.forEach(v => {
-          vTbl.innerHTML += `
-            <tr>
-              <td><span class="table-pk">${v.VehicleID}</span></td>
-              <td><strong>${v.Make} ${v.Model}</strong></td>
-              <td>${v.Year}</td>
-              <td>${v.Category}</td>
-              <td><code style="font-size: 0.8rem;">${v.RegistrationNo}</code></td>
-              <td><strong>${App.formatCurrency(v.DailyRate)}</strong></td>
-              <td><span class="table-pk" style="background:#e0e7ff; color:#3730a3;">${v.BranchID}</span></td>
-              <td><span class="badge badge-${v.Status.toLowerCase().replace(' ', '-')}">${v.Status}</span></td>
-              <td><button onclick="deleteRecord('${DB.STORAGE_KEYS.VEHICLES}', 'VehicleID', '${v.VehicleID}')" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i> DELETE</button></td>
-            </tr>
-          `;
-        });
+        // Vehicles from PostgreSQL
+loadPostgresVehicles();
 
-        // Customers
-        const customers = DB.getAll(DB.STORAGE_KEYS.CUSTOMERS);
-        const cTbl = document.getElementById('tbl-customers-body');
-        cTbl.innerHTML = '';
-        customers.forEach(c => {
-          cTbl.innerHTML += `
-            <tr>
-              <td><span class="table-pk">${c.CustomerID}</span></td>
-              <td><strong>${c.Name}</strong></td>
-              <td>${c.Email}</td>
-              <td>${c.Phone}</td>
-              <td><code>${c.DLNumber}</code></td>
-              <td>${c.RegistrationDate}</td>
-              <td><span class="badge badge-active">${c.Status}</span></td>
-              <td><button onclick="deleteRecord('${DB.STORAGE_KEYS.CUSTOMERS}', 'CustomerID', '${c.CustomerID}')" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i> DELETE</button></td>
-            </tr>
-          `;
-        });
-
+       // Customers from PostgreSQL
+loadPostgresCustomers();
         // Employees
-        const employees = DB.getAll(DB.STORAGE_KEYS.EMPLOYEES);
-        const eTbl = document.getElementById('tbl-employees-body');
-        eTbl.innerHTML = '';
-        employees.forEach(e => {
-          eTbl.innerHTML += `
-            <tr>
-              <td><span class="table-pk">${e.EmployeeID}</span></td>
-              <td><strong>${e.Name}</strong></td>
-              <td><span class="badge badge-info">${e.Role}</span></td>
-              <td><span class="table-pk" style="background:#e0e7ff; color:#3730a3;">${e.BranchID}</span></td>
-              <td>${e.Email}</td>
-              <td>${e.Phone}</td>
-              <td><span class="badge badge-active">${e.Status}</span></td>
-              <td><button onclick="deleteRecord('${DB.STORAGE_KEYS.EMPLOYEES}', 'EmployeeID', '${e.EmployeeID}')" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i> DELETE</button></td>
-            </tr>
-          `;
-        });
+       // Employees from PostgreSQL
+loadPostgresEmployeeDirectory();
 
         // Branches
         const bList = DB.getAll(DB.STORAGE_KEYS.BRANCHES);
@@ -498,6 +609,156 @@
       const badge = document.getElementById('active-entity-badge');
       if (badge) badge.innerHTML = `<i class="fa-solid fa-table"></i> Entity: ${tab.toUpperCase()}`;
     }
+    
+async function loadPostgresEmployeeDirectory() {
+  const tbody = document.getElementById('tbl-employees-body');
+
+  try {
+    const response = await fetch('/DriveHubIndia/api/employees');
+
+    if (!response.ok) {
+      throw new Error(`API returned HTTP ${response.status}`);
+    }
+
+    const employees = await response.json();
+    tbody.innerHTML = '';
+
+    employees.forEach(emp => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${emp.employeeid}</td>
+          <td>${emp.name}</td>
+          <td>${emp.role}</td>
+          <td>${emp.branchid}</td>
+          <td>${emp.email}</td>
+          <td>${emp.phone}</td>
+          <td>${emp.status || 'Active'}</td>
+          <td>
+            <button class="btn btn-danger btn-sm"
+              onclick="deletePostgresEmployee(${emp.employeeid})">
+              DELETE
+            </button>
+          </td>
+        </tr>`;
+    });
+  } catch (error) {
+    console.error('Could not load employees:', error);
+  }
+}
+
+async function loadPostgresVehicles() {
+    const tbody = document.getElementById('tbl-vehicles-body');
+
+    try {
+        const response = await fetch('/DriveHubIndia/api/data?table=vehicle');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+
+        const vehicles = await response.json();
+
+        tbody.innerHTML = vehicles.map(v => `
+            <tr>
+                <td><span class="table-pk">${v.vehicleid}</span></td>
+                <td><strong>${v.make} ${v.model}</strong></td>
+                <td>${v.year}</td>
+                <td>${v.category}</td>
+                <td>${v.registrationno}</td>
+                <td><strong>₹${v.dailyrate}</strong></td>
+                <td>${v.branchid}</td>
+                <td>${v.status}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm"
+                        onclick="deletePostgresVehicle(${v.vehicleid})">
+                        DELETE
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Vehicle loading failed:', error);
+        alert('Could not load vehicles: ' + error.message);
+    }
+}
+async function loadPostgresCustomers() {
+    const tbody = document.getElementById('tbl-customers-body');
+
+    try {
+        const response = await fetch('/DriveHubIndia/api/data?table=customer');
+
+        if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
+        }
+
+        const customers = await response.json();
+
+        tbody.innerHTML = customers.map(c => `
+            <tr>
+                <td>${c.customerid}</td>
+                <td>${c.name ?? ''}</td>
+                <td>${c.email ?? ''}</td>
+                <td>${c.phone ?? ''}</td>
+                <td>${c.dlnumber ?? ''}</td>
+                <td>${c.registrationdate ?? ''}</td>
+                <td>${c.status ?? 'Active'}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm"
+                        onclick="deletePostgresCustomer(${c.customerid})">
+                        DELETE
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error('Customer loading failed:', error);
+        alert('Could not load customers: ' + error.message);
+    }
+}
+
+async function deletePostgresVehicle(id) {
+    if (!confirm('Delete this vehicle?')) return;
+
+    try {
+        const response = await fetch(
+            '/DriveHubIndia/api/data?table=vehicle&id=' + id,
+            { method: 'DELETE' }
+        );
+
+        if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
+        }
+
+        await loadPostgresVehicles();
+        alert('Vehicle deleted.');
+    } catch (error) {
+        alert('Delete failed: ' + error.message);
+    }
+}
+
+
+async function deletePostgresEmployee(id) {
+  if (!confirm('Delete this employee?')) return;
+
+  try {
+    const response = await fetch('/DriveHubIndia/api/employees?id=' + id, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      throw new Error(`Delete failed: HTTP ${response.status}`);
+    }
+
+    await loadPostgresEmployeeDirectory();
+    alert('Employee deleted successfully.');
+  } catch (error) {
+    console.error(error);
+    alert('Could not delete employee. Check the Console.');
+  }
+}
+
   </script>
+  
+  
+  
+  
 </body>
 </html>
